@@ -1,4 +1,4 @@
 *.story
 /long-term
-/bart-samsum/data
-/ranker/data
+/bart-samsum/data/*
+/ranker/data/*
