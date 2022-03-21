@@ -1,0 +1,19 @@
+python -m torch.distributed.launch --nproc_per_node 8 --master_port 6006 run_translation.py \
+--model_name_or_path /weizhou_data/models/mbart-large-50-one-to-many-mmt \
+--do_train \
+--do_eval \
+--source_lang en_XX \
+--target_lang de_DE \
+--learning_rate 5e-5 \
+--num_train_epochs 3 \
+--logging_strategy steps --save_steps 5000 \
+--save_strategy steps --save_steps 5000 \
+--evaluation_strategy steps --eval_steps 5000 \
+--save_total_limit 10  \
+--dataset_name wmt14 \
+--dataset_config_name de-en \
+--output_dir saves/mbart_large_wmt14_de_en \
+--per_device_train_batch_size=4 \
+--per_device_eval_batch_size=4 \
+--overwrite_output_dir \
+--predict_with_generate
