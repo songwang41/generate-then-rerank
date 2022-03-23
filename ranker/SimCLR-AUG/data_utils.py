@@ -336,8 +336,14 @@ class ReRankingDataset_aug(Dataset):
             and replace other candidate with the candidates sampled from candidate pool
         '''
         candidates = sample['candidate_ids']
-        candidate_keep = random.sample(candidates, self.num_keep)
-
+        keepindex = random.sample(list(range(self.maxnum)), self.num_keep)
+        keepindex = sorted(keepindex)
+        candidate_keep = []
+        for i in keepindex:
+            candidate_keep.append(candidates[i])
+        # candidate_keep = random.sample(candidates, self.num_keep)
+        
+        
         for _ in range(self.maxnum - self.num_keep):
             while True:
                 i = random.randint(0, len(self.candidate_pool) - 1)

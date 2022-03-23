@@ -199,8 +199,8 @@ def run(rank, args):
                     param_group['lr'] = lr
                 s_optimizer.step()
                 s_optimizer.zero_grad()
-            if sim_step % args.report_freq == 0 and step_cnt == 0 and is_master:
-                print(f"similarity: {similarity[:, :10]}")
+            if all_step_cnt % args.report_freq == 0 and step_cnt == 0 and is_master:
+                # print(f"similarity: {similarity[:, :10]}")
                 if not args.no_gold:
                     print(f"gold similarity: {gold_similarity}")
                 recorder.print("epoch: %d, batch: %d, avg loss: %.6f"%(epoch, i / args.accumulate_step, 
