@@ -372,6 +372,7 @@ class Seq2SeqTrainer(Trainer):
             # Prediction step
             # print(inputs)
             _, logits, _ = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys)
+
             # logits : [B*num_return_seq, max_gen_len]
             # Update containers on host
             if logits is not None:
