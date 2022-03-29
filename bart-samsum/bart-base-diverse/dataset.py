@@ -74,7 +74,7 @@ class SamsumDataset(Dataset):
                     })
             else:
                 for d in raw_data:
-                    content_ids = tokenizer.convert_tokens_to_ids(tokenizer.tokenize('</s> ' + d['source']))
+                    content_ids = tokenizer.convert_tokens_to_ids(tokenizer.tokenize('<s> ' + d['source']))
                     label = tokenizer.convert_tokens_to_ids(tokenizer.tokenize('<s> '+d['target']))
 
                     # if len(content_ids)>=self.args.max_sent_len:
