@@ -161,8 +161,8 @@ if __name__ == "__main__":
     # for n in range(1, 32):
     #     generate_data(dataset_name, 'test', tokenizer, sent_detector, n, eval_metric)
 
-    samples1 = generate_data(dataset_name, candidate_dir, 'train_1',  tokenizer, sent_detector, 16, eval_metric)
-    samples2 = generate_data(dataset_name, candidate_dir, 'train_2',  tokenizer, sent_detector, 16, eval_metric)
+    samples1 = generate_data(dataset_name, candidate_dir, 'train_1',  tokenizer, sent_detector, num_cand, eval_metric)
+    samples2 = generate_data(dataset_name, candidate_dir, 'train_2',  tokenizer, sent_detector, num_cand, eval_metric)
     
     samples = samples1 + samples2
 
