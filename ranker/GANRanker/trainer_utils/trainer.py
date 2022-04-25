@@ -422,10 +422,6 @@ class Trainer:
         if self.args.do_eval:
             self.metrics_tracker['eval_metrics'] = []
 
-        self.reward_tracker = {
-            'scores': [],
-            'reranker_logits': []
-        }
         # very last
         self._memory_tracker.stop_and_update_metrics()
 
@@ -778,7 +774,7 @@ class Trainer:
         self.is_in_train = False
 
         self._memory_tracker.stop_and_update_metrics(metrics)
-        
+
 
         if self.is_local_process_zero() and not self.args.disable_tqdm:
             self.training_bar.write(str(metrics))
@@ -1025,16 +1021,15 @@ class Trainer:
                     generated_tokens, skip_special_tokens=True, clean_up_tokenization_spaces=True
                 )
 
-        _, candidate_texts, candidate_scores = self.compute_metrics.get_candidates(target_text, pos_text,  generated_seqs, 
+        _, candidate_texts = self.compute_metrics.get_candidates(target_text, pos_text,  generated_seqs, 
                                 self.args.num_cand_generated, self.args.num_cand_picked, self.args.candidate_pick_strategy, self.args.pos_type) # (B* (C-1)), list with length of B*C
         
-        self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
+        
         # process input for input
         reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts) # both (B, C, L)
 
         reranker_output = reranker_model(input_ids=reranker_input_ids, attention_mask = reranker_attention_mask)
 
-        self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
@@ -1085,7 +1080,7 @@ class Trainer:
                     generated_tokens.detach(), skip_special_tokens=True, clean_up_tokenization_spaces=True
                 )
 
-        candidate_indices, candidate_texts, candidate_scores = self.compute_metrics.get_candidates(target_text, pos_text, generated_seqs, 
+        candidate_indices, candidate_texts = self.compute_metrics.get_candidates(target_text, pos_text, generated_seqs, 
                                 self.args.num_cand_generated, self.args.num_cand_picked,  self.args.candidate_pick_strategy, self.args.pos_type) # (B* (C-1)), list with length of B*C
         
         candidate_indices = candidate_indices.to(self.args.device)
@@ -1117,10 +1112,6 @@ class Trainer:
                 reranker_logits = reranker_output.logits
                 rewards_probs = torch.softmax(reranker_logits, dim = 1)
                 rewards_probs = rewards_probs[:,1:]
-
-            self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
-            self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
-
             rewards_probs = rewards_probs
             rewards = torch.log(rewards_probs+eps)
             rewards = rewards.view(-1) #(B* (C-1))
@@ -1582,7 +1573,7 @@ class Trainer:
         if self.args.generate_eval_candidates:
             # for compute loss of reranker, we need to prepare the reranker inputs here
             # 1. get the candidates 2. get the reranker input
-            _, candidate_texts,_ = self.compute_metrics.get_candidates(target_texts, None,  generated_seqs, 
+            _, candidate_texts = self.compute_metrics.get_candidates(target_texts, None,  generated_seqs, 
                                 self.args.num_cand_generated, self.args.num_cand_generated, 'bottom', 'generate') # (B* (C-1)), list with length of B*C
             reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts)
             # get candidates for reranker to select
