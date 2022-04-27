@@ -1147,8 +1147,12 @@ class Trainer:
                     rewards_probs = torch.sigmoid(reranker_logits) #(B, C-1)
                 else:
                     rewards_probs = torch.softmax(reranker_logits, dim = 1)
-                    
-                # rewards = torch.log(rewards_probs+eps)
+                
+                rewards = -torch.log(rewards_probs+eps)
+                rewards_max = torch.max(rewards, dim=1, keepdim =True).values # (B, 1)
+                rewards_min = torch.min(rewards, dim=1, keepdim =True).values # (B, 1)
+                rewards_base = (rewards_max+rewards_min) / 2
+                rewards = rewards_base - rewards
                 rewards = rewards_probs.view(-1) #(B* C)
                 rewards = rewards.unsqueeze(1).expand_as(generated_probs)
 
@@ -1162,7 +1166,7 @@ class Trainer:
                 #     rewards = rewards - greedy_rewards
                     
 
-        rl_loss =  -rewards*torch.log(generated_probs+eps) # (B*C, L)
+        rl_loss = rewards*torch.log(generated_probs+eps) # (B*C, L)
         rl_loss = rl_loss.mean()
         loss = rl_loss
 
