@@ -1148,8 +1148,8 @@ class Trainer:
                 else:
                     rewards_probs = torch.softmax(reranker_logits, dim = 1)
                     
-                rewards = torch.log(rewards_probs+eps)
-                rewards = rewards.view(-1) #(B* C)
+                # rewards = torch.log(rewards_probs+eps)
+                rewards = rewards_probs.view(-1) #(B* C)
                 rewards = rewards.unsqueeze(1).expand_as(generated_probs)
 
                 # if self.args.use_baseline_reward:
