@@ -19,6 +19,7 @@ from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from attr import fields_dict
 
 
 from transformers.debug_utils import DebugOption
@@ -331,6 +332,11 @@ class TrainingArguments:
 
     # parameters for GAN training
     generator_supervised: bool = field(default=True, metadata={"help": "To also train generator in superived training"})
+    use_baseline_reward:  bool = field(default=True, metadata={"help": "To use baselien in reinforcement learning"})
+    reward_type: Optional[str] = field(
+        default='reranker',
+        metadata={'help': "how the reward is compusted: metric/reranker"}
+    )
     generator_supervised_lambda: float = field(default=1.0, metadata={"help": "The weigth of supervised loss in training the generator"})
     num_cand_generated: Optional[int] = field(
         default=16,
@@ -345,6 +351,10 @@ class TrainingArguments:
         default="random",
          metadata={"help": "How to pick the candidate."
                             "random: randomly pick, top: pick the best candidates, bottom: pick the worst candidates, top-bottom"},
+    )
+    training_mode: Optional[str] = field(
+        default='iterative',
+        metadata={"help": "to train generator and reranker iteratively(iterative) or co-training(co-train)"}
     )
     iteration_steps: Optional[int] = field(
         default=200,

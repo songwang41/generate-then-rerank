@@ -26,6 +26,7 @@ import re
 import shutil
 import sys
 import time
+from tkinter import E
 import warnings
 from logging import StreamHandler
 from pathlib import Path
@@ -421,6 +422,11 @@ class Trainer:
             self.metrics_tracker['train_metrics'] = []
         if self.args.do_eval:
             self.metrics_tracker['eval_metrics'] = []
+
+        self.reward_tracker = {
+            'scores': [],
+            'reranker_logits': []
+        }
 
         # very last
         self._memory_tracker.stop_and_update_metrics()
@@ -999,10 +1005,7 @@ class Trainer:
             labels = None
         target_text = inputs.pop("target_text")
         source_text = inputs.pop('source_text')
-        if self.args.pos_type != 'generate':
-            pos_text = inputs.pop('pos_text')
-        else:
-            pos_text = None
+        
         # use sampling not beam search
         gen_kwargs = {
             "max_length": self.args.max_target_length,
@@ -1021,15 +1024,17 @@ class Trainer:
                     generated_tokens, skip_special_tokens=True, clean_up_tokenization_spaces=True
                 )
 
-        _, candidate_texts = self.compute_metrics.get_candidates(target_text, pos_text,  generated_seqs, 
-                                self.args.num_cand_generated, self.args.num_cand_picked, self.args.candidate_pick_strategy, self.args.pos_type) # (B* (C-1)), list with length of B*C
+        _, candidate_texts, candidate_scores = self.compute_metrics.get_candidates(target_text,  generated_seqs, 
+                                self.args.num_cand_generated, self.args.num_cand_picked, self.args.candidate_pick_strategy) # (B* (C-1)), list with length of B*C
         
+        self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
         
         # process input for input
         reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts) # both (B, C, L)
 
         reranker_output = reranker_model(input_ids=reranker_input_ids, attention_mask = reranker_attention_mask)
 
+        self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
@@ -1055,10 +1060,7 @@ class Trainer:
             labels = None
         target_text = inputs.pop("target_text")
         source_text = inputs.pop('source_text')
-        if self.args.pos_type != 'generate':
-            pos_text = inputs.pop('pos_text')
-        else:
-            pos_text = None
+
         # use sampling not beam search
         gen_kwargs = {
             "max_length": self.args.max_target_length,
@@ -1080,8 +1082,8 @@ class Trainer:
                     generated_tokens.detach(), skip_special_tokens=True, clean_up_tokenization_spaces=True
                 )
 
-        candidate_indices, candidate_texts = self.compute_metrics.get_candidates(target_text, pos_text, generated_seqs, 
-                                self.args.num_cand_generated, self.args.num_cand_picked,  self.args.candidate_pick_strategy, self.args.pos_type) # (B* (C-1)), list with length of B*C
+        candidate_indices, candidate_texts, candidate_scores = self.compute_metrics.get_candidates(target_text, generated_seqs, 
+                                self.args.num_cand_generated, self.args.num_cand_picked,  self.args.candidate_pick_strategy) # (B* C), list with length of B*C
         
         candidate_indices = candidate_indices.to(self.args.device)
 
@@ -1095,31 +1097,74 @@ class Trainer:
         generated_probs = torch.gather(generated_probs, 1, generated_tokens_indices)
         generated_probs = generated_probs.view(-1, seq_len) # (B * num_candates, L )
 
-        generated_probs = torch.index_select(generated_probs, 0, candidate_indices) # (B * (C-1), L) 
+        generated_probs = torch.index_select(generated_probs, 0, candidate_indices) # (B * C, L) 
 
 
-        # process input for input
+        # compute reward
         with torch.no_grad():
-            reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts) # both (B, C, L)
+            if self.args.use_baseline_reward:
+                greedy_gen_kwargs = {
+                    "max_length": self.args.max_target_length,
+                    "num_beams": 1,
+                    "do_sample":False,
+                    "num_return_sequences": 1,
+                    "synced_gpus": True if is_deepspeed_zero3_enabled() else False,
+                    "return_dict_in_generate": False
+                }
+                greedy_outputs = unwrap_model(generator_model).generate(
+                    inputs["input_ids"],
+                    attention_mask=inputs["attention_mask"],
+                    **greedy_gen_kwargs,
+                ) # (B*num_candidates, L)
+                greedy_texts = self.generator_tokenizer.batch_decode(
+                    greedy_outputs.detach(), skip_special_tokens=True, clean_up_tokenization_spaces=True
+                ) # list with length of B
 
-            reranker_output = reranker_model(input_ids=reranker_input_ids, attention_mask = reranker_attention_mask)
+            if self.args.reward_type == 'metric':
+                rewards = self.compute_metrics.get_reward(target_text, candidate_texts) # (B* C)
+                rewards = rewards.to(self.args.device)
+                rewards = rewards.unsqueeze(1).expand_as(generated_probs)
 
-            
-            if self.args.reranker_loss_type == 'binary':
-                reranker_logits = reranker_output.logits[:,1:] #(B, C-1)
-                rewards_probs = torch.sigmoid(reranker_logits) #(B, C-1)
+                if self.args.use_baseline_reward:
+                    greedy_rewards = self.compute_metrics.get_reward(target_text, greedy_texts) #(B)
+                    greedy_rewards = greedy_rewards.to(self.args.device)
+                    greedy_rewards = greedy_rewards.unsqueeze(1).expand(-1, self.args.num_cand_picked)
+                    greedy_rewards = greedy_rewards.contiguous().view(-1)
+                    greedy_rewards = greedy_rewards.unsqueeze(1).expand_as(generated_probs)
+                    rewards = rewards - greedy_rewards
             else:
-                reranker_logits = reranker_output.logits
-                rewards_probs = torch.softmax(reranker_logits, dim = 1)
-                rewards_probs = rewards_probs[:,1:]
-            rewards_probs = rewards_probs
-            rewards = torch.log(rewards_probs+eps)
-            rewards = rewards.view(-1) #(B* (C-1))
-            rewards = rewards.unsqueeze(1).expand_as(generated_probs)
+                reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts) # both (B, C, L)
 
-        adv_loss =  -rewards*torch.log(generated_probs+eps) # (B*(C-1), L)
-        adv_loss = adv_loss.mean()
-        loss = adv_loss
+                reranker_output = reranker_model(input_ids=reranker_input_ids, attention_mask = reranker_attention_mask)
+
+                reranker_logits = reranker_output.logits #(B, C)
+
+                self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
+
+                self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
+
+                if self.args.reranker_loss_type == 'binary':
+                    rewards_probs = torch.sigmoid(reranker_logits) #(B, C-1)
+                else:
+                    rewards_probs = torch.softmax(reranker_logits, dim = 1)
+                    
+                rewards = torch.log(rewards_probs+eps)
+                rewards = rewards.view(-1) #(B* C)
+                rewards = rewards.unsqueeze(1).expand_as(generated_probs)
+
+                # if self.args.use_baseline_reward:
+                #     greedy_input_ids, greedy_attention_mask = self._get_reranker_input_ids(source_text, greedy_texts)
+                #     greedy_reranker_output = reranker_model(input_ids=greedy_input_ids, attention_mask = greedy_attention_mask)
+                #     greedy_logits = greedy_reranker_output.logits #(B, 1)
+                #     greedy_rewards = greedy_logits.expand(-1, self.args.num_cand_picked)
+                #     greedy_rewards = greedy_rewards.contiguous().view(-1)
+                #     greedy_rewards = greedy_rewards.unsqueeze(1).expand_as(generated_probs)
+                #     rewards = rewards - greedy_rewards
+                    
+
+        rl_loss =  -rewards*torch.log(generated_probs+eps) # (B*C, L)
+        rl_loss = rl_loss.mean()
+        loss = rl_loss
 
         # supervise training
         if self.args.generator_supervised:
@@ -1573,8 +1618,8 @@ class Trainer:
         if self.args.generate_eval_candidates:
             # for compute loss of reranker, we need to prepare the reranker inputs here
             # 1. get the candidates 2. get the reranker input
-            _, candidate_texts = self.compute_metrics.get_candidates(target_texts, None,  generated_seqs, 
-                                self.args.num_cand_generated, self.args.num_cand_generated, 'bottom', 'generate') # (B* (C-1)), list with length of B*C
+            _, candidate_texts,_ = self.compute_metrics.get_candidates(target_texts, generated_seqs, 
+                                self.args.num_cand_generated, self.args.num_cand_generated, 'bottom') # (B* (C-1)), list with length of B*C
             reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts)
             # get candidates for reranker to select
             candidates = [candidate_texts[i*self.args.num_cand_generated: (i+1)*self.args.num_cand_generated] for i in range(len(source_text))]

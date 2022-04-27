@@ -33,7 +33,7 @@ from model_utils.reranker_utils import RobertaRanker, LongformerRanker
 from model_utils.generation_utils import BartForConditionalGeneration
 from model_utils.utils import load_reranker_model, load_generator_model
 from trainer_utils.trainer import Trainer
-from data_utils.data_collator import DataCollatorForReranking, DataCollator_train, DataCollator_eval
+from data_utils.data_collator import DataCollator_train, DataCollator_eval
 
 from data_utils.metric_utils import compute_rouge
 from trainer_utils.training_args import TrainingArguments
@@ -187,14 +187,6 @@ class DataTrainingArguments:
         default=True, metadata={"help": "whether to load the preprocessed data, this will speed up the data loading stage"}
     )
 
-    
-    pos_type: Optional[str] = field(
-        default="generate", metadata={"help": "where the positive samples comes, groundtruth/oracle/generate"}
-    )
-
-    oracle_as_label: Optional[bool] = field(
-        default=False, metadata={"help": "use oracle/groundtruth as the target when training generator on supervise training"}
-    )
 
     generate_eval_candidates:  Optional[bool] = field(
         default=False, metadata={"help": "whether to generate candidates with the co-trained generator when evaluation"}
@@ -209,10 +201,7 @@ class DataTrainingArguments:
     # )
     # test_file: Optional[str] = field(default=None, metadata={"help": "A csv or a json file containing the test data."})
 
-    def __post_init__(self):
-        assert self.pos_type in ['groundtruth', 'oracle', 'generate']
-        if self.pos_type == 'generate':
-            self.oracle_as_label = False
+    # def __post_init__(self):
     #     if self.task_name is not None:
     #         self.task_name = self.task_name.lower()
     #         if self.task_name not in task_to_keys.keys():
@@ -397,11 +386,9 @@ def main():
     data_collator_eval = DataCollator_eval(generator_tokenizer, reranker_tokenizer, data_args.generate_eval_candidates)
 
     # passing needed trainer args for generation
-    setattr(training_args, "max_target_length", data_args.max_target_length)
-    setattr(training_args, "pos_type", data_args.pos_type)
     setattr(training_args, "reranker_loss_type", model_args.loss_type)
+    setattr(training_args, "max_target_length", data_args.max_target_length)
     setattr(training_args, "generate_eval_candidates", data_args.generate_eval_candidates)
-    setattr(training_args, 'reranker_max_source_length', data_args.reranker_max_source_length)
     setattr(training_args, 'reranker_max_source_length', data_args.reranker_max_source_length)
 
     # Initialize our Trainer
@@ -421,7 +408,11 @@ def main():
 
     # Training
     if training_args.do_train:
-        train_result = trainer.train()
+        if training_args.training_mode == 'iterative':
+            train_result = trainer.train()
+        elif training_args.training_mode == 'co-train':
+            pass
+            train_result = trainer.co_train()
         metrics = train_result.metrics
         max_train_samples = (
             data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
