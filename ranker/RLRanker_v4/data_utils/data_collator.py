@@ -172,24 +172,12 @@ class DataCollator_eval:
         # for reranker
         candidate_ids = []
         batch_size = len(features)
-        if not self.generate_eval_candidates:
-            cand_num = len(features[0]['candidates_ids'])
-            for d in features:
-                candidate_ids += d['candidates_ids']
-            candidate_ids = [torch.LongTensor(c) for c in candidate_ids]
-            candidate_ids = pad_sequence(candidate_ids, batch_first = True, padding_value = self.reranker_tokenizer.pad_token_id) # (B*C,L)
-            candidate_ids = candidate_ids.view(batch_size, cand_num, -1)
-            reranker_attention_mask = candidate_ids != self.reranker_tokenizer.pad_token_id
-            candidates = [d['candidates'] for d in features]
 
         # for generator
         input_ids = pad_sequence([d['input_ids'] for d in features], batch_first = True, padding_value = self.generator_tokenizer.pad_token_id) # (B, L )
         generator_attention_mask = input_ids != self.generator_tokenizer.pad_token_id
 
         batch = {}
-        if not self.generate_eval_candidates:
-            batch['reranker_input_ids'] = candidate_ids
-            batch['reranker_attention_mask'] = reranker_attention_mask
 
         batch['generator_input_ids'] = input_ids
         batch['generator_attention_mask'] = generator_attention_mask
@@ -203,9 +191,6 @@ class DataCollator_eval:
             batch['target_text'] = [d['target_text'] for d in features]
         else:
             batch['target_text'] = None
-        
-        if not self.generate_eval_candidates:
-            batch['candidates'] = candidates
         
         
         batch['source_text'] = [d['source_text'] for d in features]

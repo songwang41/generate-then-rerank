@@ -35,7 +35,7 @@ from model_utils.utils import load_reranker_model, load_generator_model
 from trainer_utils.trainer import Trainer
 from data_utils.data_collator import DataCollator_train, DataCollator_eval
 
-from data_utils.metric_utils import compute_rouge
+from data_utils.metric_utils import compute_rouge, compute_coqa, compute_dialog, compute_qg
 from trainer_utils.training_args import TrainingArguments
 
 import transformers
@@ -89,7 +89,7 @@ class DataTrainingArguments:
 
     task_name: Optional[str] = field(
         default="sum",
-        metadata={"help": "mt or sum"},
+        metadata={"help": "sum/qg/dialog/coqa"},
     )
     dataset_name: Optional[str] = field(
         default=None, metadata={"help": "The name of the dataset to use (via the datasets library)."}
@@ -367,8 +367,12 @@ def main():
 
     if data_args.task_name == "sum":
         compute_metrics = compute_rouge()
-    elif data_args.task_name == "mt":
-        metric = load_metric('sacrebleu')
+    elif data_args.task_name == 'qg':
+        compute_metrics = compute_qg()
+    elif data_args.task_name == 'coqa':
+        compute_metrics = compute_coqa()
+    elif data_args.task_name == 'dialog':
+        compute_metrics = compute_dialog()
 
     # You can define your custom compute_metrics function. It takes an `EvalPrediction` object (a namedtuple with a
     # predictions and label_ids field) and has to return a dictionary string to float.
@@ -481,9 +485,9 @@ def main():
     #     with open(os.path.join(training_args.output_dir, 'metrics_tracker.json'), 'w', encoding='utf-8') as f:
     #         json.dump(trainer.metrics_tracker, f)
 
-    if trainer.is_local_process_zero():
-        with open(os.path.join(training_args.output_dir, 'reward_tracker.json'), 'w', encoding='utf-8') as f:
-            json.dump(trainer.reward_tracker, f)
+    # if trainer.is_local_process_zero():
+    #     with open(os.path.join(training_args.output_dir, 'reward_tracker.json'), 'w', encoding='utf-8') as f:
+    #         json.dump(trainer.reward_tracker, f)
 
     if training_args.push_to_hub:
         kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "text-classification"}
