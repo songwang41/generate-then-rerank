@@ -180,6 +180,7 @@ class Seq2SeqTrainer(Trainer):
         gen_kwargs = {
             "max_length": self._max_length if self._max_length is not None else self.model.config.max_length,
             "num_beams": self._num_beams if self._num_beams is not None else self.model.config.num_beams,
+            "do_sample": self.args.generation_do_sample,
             "num_return_sequences": self._num_return_sequences if self._num_return_sequences is not None else self.model.config.num_return_sequences,
             "num_beam_groups": self._num_beam_groups if self._num_beam_groups is not None else self.model.config.num_beam_groups,
             "diversity_penalty": self._diversity_penalty if self._diversity_penalty is not None else self.model.config.diversity_penalty,
@@ -276,6 +277,7 @@ class Seq2SeqTrainer(Trainer):
         self._max_length = max_length if max_length is not None else self.args.generation_max_length
         self._num_beams = num_beams if num_beams is not None else self.args.generation_num_beams
         self._num_return_sequences =  self.args.generation_num_return_sequences
+        self._do_sample = self.args.generation_do_sample
         self._num_beam_groups = self.args.generation_num_beam_groups
         self._diversity_penalty = self.args.generation_diversity_penalty
         # return super().predict(test_dataset, ignore_keys=ignore_keys, metric_key_prefix=metric_key_prefix)

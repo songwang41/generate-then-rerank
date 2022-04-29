@@ -105,7 +105,8 @@ class SamsumDataset(Dataset):
             label
         '''
         return torch.LongTensor(self.data[index]['content_ids']), \
-               torch.LongTensor(self.data[index]['labels']),torch.FloatTensor(self.data[index]['attention_mask'])
+               torch.LongTensor(self.data[index]['labels']) if 'labels' in self.data[index].keys() else torch.LongTensor(self.data[index]['target_ids']), \
+               torch.FloatTensor(self.data[index]['attention_mask']) if 'attention_mask' in self.data[index].keys() else None
 
     def __len__(self):
         return self.len
@@ -125,8 +126,10 @@ class SamsumDataset(Dataset):
         labels = pad_sequence([d[1] for d in data], batch_first = True, padding_value=-100)
 
 
-
-        attention_mask = pad_sequence([d[2] for d in data], batch_first = True)
+        if data[0][2] is not None:
+            attention_mask = pad_sequence([d[2] for d in data], batch_first = True)
+        else:
+            attention_mask = None
 
         sample = {}
         sample['input_ids'] = content_ids

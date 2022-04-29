@@ -338,6 +338,7 @@ class TrainingArguments:
         metadata={'help': "how the reward is compusted: metric/reranker"}
     )
     generator_supervised_lambda: float = field(default=1.0, metadata={"help": "The weigth of supervised loss in training the generator"})
+    reward_scaler: float = field(default=1.0, metadata={"help": "The weigth of rewards in training the generator"})
     num_cand_generated: Optional[int] = field(
         default=16,
         metadata={"help": "Number of candidate generate by the generator at each step of training."},

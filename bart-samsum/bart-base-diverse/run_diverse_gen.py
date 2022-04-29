@@ -459,10 +459,10 @@ def main():
                     predict_results.predictions, skip_special_tokens=True, clean_up_tokenization_spaces=True
                 )
                 predictions = [pred.strip() for pred in predictions]
-                if not os.path.exists('results/%s/%s'%(data_args.dataset_name, data_args.split)):
-                    os.makedirs('results/%s/%s'%(data_args.dataset_name, data_args.split))
+                if not os.path.exists('results/%s/%s_sample'%(data_args.dataset_name, data_args.split)):
+                    os.makedirs('results/%s/%s_sample'%(data_args.dataset_name, data_args.split))
 
-                output_prediction_file = "results/%s/%s/generated_predictions_%d.txt" % (data_args.dataset_name, data_args.split, trainer.args.generation_num_return_sequences)
+                output_prediction_file = "results/%s/%s_sample/generated_predictions_%d.txt" % (data_args.dataset_name, data_args.split, trainer.args.generation_num_return_sequences)
                 with open(output_prediction_file, "w") as writer:
                     writer.write("\n".join(predictions))
 

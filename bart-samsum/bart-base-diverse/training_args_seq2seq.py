@@ -82,3 +82,10 @@ class Seq2SeqTrainingArguments(TrainingArguments):
                 "enabled."
         },
     )
+
+    generation_do_sample: Optional[bool] = field(
+        default= False,
+        metadata={
+            "help": "generate in sample mode."
+        },
+    )

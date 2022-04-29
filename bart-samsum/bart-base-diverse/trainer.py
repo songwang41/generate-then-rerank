@@ -134,8 +134,8 @@ if is_in_notebook():
 
     DEFAULT_PROGRESS_CALLBACK = NotebookProgressCallback
 
-if is_apex_available():
-    from apex import amp
+# if is_apex_available():
+#     from apex import amp
 
 if version.parse(torch.__version__) >= version.parse("1.6"):
     _is_torch_generator_available = True

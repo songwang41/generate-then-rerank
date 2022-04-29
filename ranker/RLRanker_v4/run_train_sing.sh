@@ -4,7 +4,7 @@ python -m torch.distributed.launch --nproc_per_node 8 --master_port 6009 run_tra
     --dev_data_path /weizhou_data/generation/ranker/GANRanker/data/cnndm \
     --test_data_path /weizhou_data/generation/ranker/GANRanker/data/cnndm \
     --load_tokenized_data True \
-    --generator_supervised True --generator_supervised_lambda 1.0 \
+    --generator_supervised True --generator_supervised_lambda 1.0 --reward_scaler 1.5 \
     --evaluate_generator True --generate_eval_candidates True \
     --use_baseline_reward True --reward_type reranker --training_mode iterative \
     --num_cand_generated 16 --num_cand_picked 3 --candidate_pick_strategy bottom \

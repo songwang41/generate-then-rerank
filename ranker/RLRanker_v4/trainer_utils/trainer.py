@@ -1154,6 +1154,7 @@ class Trainer:
                 # rewards_base = (rewards_max+rewards_min) / 2
                 rewards_base = rewards[:,:1] # (B, 1)
                 rewards = torch.relu(rewards_base - rewards)
+                rewards = self.args.reward_scaler * rewards
                 rewards = rewards.view(-1) #(B* C)
                 rewards = rewards.unsqueeze(1).expand_as(generated_probs)
 
