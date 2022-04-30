@@ -143,7 +143,7 @@ class compute_qg:
     def postprocess_text_bleu(self, preds, labels):
         preds = [nltk.word_tokenize(pred) for pred in preds]
         labels = [nltk.word_tokenize(label) for label in labels]
-
+        
         return preds, labels
 
     def __call__(self, eval_preds):
@@ -158,7 +158,7 @@ class compute_qg:
         # Extract a few results from ROUGE
         result['rougeL'] = result_rouge['rougeL'].mid.fmeasure * 100
 
-        result['bleu_4'] = self.bleu_scorer._compute(preds_bleu, labels_bleu, max_order=4)['bleu'] * 100
+        result['bleu_4'] = self.bleu_scorer._compute(preds_bleu, [[l] for l in labels_bleu], max_order=4)['bleu'] * 100
 
         result['meteor'] = self.meteor_scorer._compute(preds_bleu, labels_bleu)['meteor'] * 100
 
@@ -200,7 +200,7 @@ class compute_qg:
                     meteor_score = 0
                 else:
                     rouge_score = self.rouge_scorer.score(t, p)['rougeL'].fmeasure
-                    bleu_score = self.bleu_scorer._compute([ps_bleu[j]], [targets_bleu[i]], max_order = 4)['bleu']
+                    bleu_score = self.bleu_scorer._compute([ps_bleu[j]], [[targets_bleu[i]]], max_order = 4)['bleu']
                     meteor_score = self.meteor_scorer._compute([ps_bleu[j]], [targets_bleu[i]])['meteor']
                 scores.append((j + i * num_cand, rouge_score / 0.5 + bleu_score/0.23 + meteor_score/0.27, p))
 
@@ -266,7 +266,7 @@ class compute_qg:
             ps_meteor = preds_meteor[i * num_cand: (i+1)*num_cand]
             for j,p in enumerate(ps):
                 rouge_score = self.rouge_scorer.score(t, p)['rougeL']
-                bleu_score = self.bleu_scorer._compute([ps_bleu[j]], [targets_bleu[i]], max_order = 4)['bleu']
+                bleu_score = self.bleu_scorer._compute([ps_bleu[j]], [[targets_bleu[i]]], max_order = 4)['bleu']
                 meteor_score = self.bleu_scorer._compute([ps_meteor[j]], [targets_meteor[i]])['meteor']
                 scores.append(rouge_score / 0.5 + bleu_score/0.23 + meteor_score/0.27)
 
@@ -314,8 +314,8 @@ class compute_dialog:
 
         # Extract a few results from ROUGE
         result = {}
-        result['bleu_1'] = self.bleu_scorer._compute(preds_bleu, labels_bleu, max_order=1)['bleu'] * 100
-        result['bleu_1'] = self.bleu_scorer._compute(preds_bleu, labels_bleu, max_order=2)['bleu'] * 100
+        result['bleu_1'] = self.bleu_scorer._compute(preds_bleu, [[l] for l in labels_bleu], max_order=1)['bleu'] * 100
+        result['bleu_2'] = self.bleu_scorer._compute(preds_bleu, [[l] for l in labels_bleu], max_order=2)['bleu'] * 100
         _,_,d1,d2 = self.distinct(preds_bleu)
         result['distinct_1'] = d1*100
         result['distinct_2'] = d2*100
@@ -353,8 +353,8 @@ class compute_dialog:
                     bleu_score_1 = 0
                     bleu_score_2 = 0
                 else:
-                    bleu_score_1 = self.bleu_scorer._compute([ps_bleu[j]], [targets_bleu[i]], max_order = 1)['bleu']
-                    bleu_score_2 = self.bleu_scorer._compute([ps_bleu[j]], [targets_bleu[i]], max_order = 2)['bleu']
+                    bleu_score_1 = self.bleu_scorer._compute([ps_bleu[j]], [[targets_bleu[i]]], max_order = 1)['bleu']
+                    bleu_score_2 = self.bleu_scorer._compute([ps_bleu[j]], [[targets_bleu[i]]], max_order = 2)['bleu']
                 # _,_, d1, d2 = self.distinct([ps_bleu[j]])
                 scores.append((j + i * num_cand, bleu_score_1 / 0.5 + bleu_score_2 / 0.4, p))
 
@@ -416,8 +416,8 @@ class compute_dialog:
             ps = preds[i * num_cand: (i+1)*num_cand]
             ps_bleu = preds_bleu[i * num_cand: (i+1)*num_cand]
             for j,p in enumerate(ps):
-                bleu_score_1 = self.bleu_scorer._compute([ps_bleu[j]], [targets_bleu[i]], max_order = 1)['bleu']
-                bleu_score_2 = self.bleu_scorer._compute([ps_bleu[j]], [targets_bleu[i]], max_order = 2)['bleu']
+                bleu_score_1 = self.bleu_scorer._compute([ps_bleu[j]], [[targets_bleu[i]]], max_order = 1)['bleu']
+                bleu_score_2 = self.bleu_scorer._compute([ps_bleu[j]], [[targets_bleu[i]]], max_order = 2)['bleu']
                 # _,_, d1, d2 = self.distinct([ps_bleu[j]])
                 scores.append( bleu_score_1 / 0.5 + bleu_score_2 / 0.4)
 
