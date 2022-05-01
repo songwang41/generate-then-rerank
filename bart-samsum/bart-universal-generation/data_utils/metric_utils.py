@@ -10,7 +10,6 @@ from .coqa_evaluator import CoQAEvaluator
 import nltk
 import random
 
-nltk.download('omw-1.4')
 
 class compute_rouge:
     def __init__(self, tokenizer, ignore_pad_token_for_loss = True):

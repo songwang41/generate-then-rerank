@@ -68,6 +68,16 @@ except (LookupError, OSError):
     with FileLock(".lock") as lock:
         nltk.download("punkt", quiet=True)
 
+try:
+    nltk.data.find("omw-1.4")
+except (LookupError, OSError):
+    if is_offline_mode():
+        raise LookupError(
+            "Offline mode: run this script without TRANSFORMERS_OFFLINE first to download nltk data files"
+        )
+    with FileLock(".lock") as lock:
+        nltk.download("omw-1.4", quiet=True)
+
 
 @dataclass
 class ModelArguments:
@@ -544,7 +554,7 @@ def main():
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
         trainer.save_model()  # Saves the tokenizer too for easy upload
 
-        metrics = train_result.metrics
+        metrics = train_result.metrics 
         max_train_samples = (
             data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
         )

@@ -39,6 +39,7 @@ from data_utils.metric_utils import compute_rouge, compute_coqa, compute_dialog,
 from trainer_utils.training_args import TrainingArguments
 
 import transformers
+from filelock import FileLock
 from transformers import (
     AutoConfig,
     AutoModelForSequenceClassification,
@@ -53,10 +54,30 @@ from transformers import (
 from transformers import RobertaConfig, RobertaTokenizer, LongformerConfig, LongformerTokenizer
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version
+from transformers.file_utils import is_offline_mode
 from transformers.utils.versions import require_version
 
 import nltk
-nltk.download('punkt')
+try:
+    nltk.data.find("tokenizers/punkt")
+except (LookupError, OSError):
+    if is_offline_mode():
+        raise LookupError(
+            "Offline mode: run this script without TRANSFORMERS_OFFLINE first to download nltk data files"
+        )
+    with FileLock(".lock") as lock:
+        nltk.download("punkt", quiet=True)
+
+
+try:
+    nltk.data.find("omw-1.4")
+except (LookupError, OSError):
+    if is_offline_mode():
+        raise LookupError(
+            "Offline mode: run this script without TRANSFORMERS_OFFLINE first to download nltk data files"
+        )
+    with FileLock(".lock") as lock:
+        nltk.download("omw-1.4", quiet=True)
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.8.0")
