@@ -12,7 +12,7 @@ import random
 
 
 class compute_rouge:
-    def __init__(self, tokenizer, ignore_pad_token_for_loss = True):
+    def __init__(self, tokenizer = None, ignore_pad_token_for_loss = True):
         self.tokenizer = tokenizer
         self.ignore_pad_token_for_loss = ignore_pad_token_for_loss
         self.metric = load_metric('rouge')
@@ -28,15 +28,16 @@ class compute_rouge:
 
         return preds, labels
 
-    def __call__(self, eval_preds):
+    def __call__(self, eval_preds, decoded = False):
         preds, labels = eval_preds
-        if isinstance(preds, tuple):
-            preds = preds[0]
-        preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True)
-        if self.ignore_pad_token_for_loss:
-            # Replace -100 in the labels as we can't decode them.
-            labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
-        labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
+        if not decoded:
+            if isinstance(preds, tuple):
+                preds = preds[0]
+            preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True)
+            if self.ignore_pad_token_for_loss:
+                # Replace -100 in the labels as we can't decode them.
+                labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
+            labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
 
         # Some simple post-processing
         decoded_preds, decoded_labels = self.postprocess_text(preds, labels)
@@ -54,7 +55,7 @@ class compute_rouge:
 
 
 class compute_qg:
-    def __init__(self, tokenizer, ignore_pad_token_for_loss = True):
+    def __init__(self, tokenizer = None, ignore_pad_token_for_loss = True):
         self.tokenizer = tokenizer
         self.ignore_pad_token_for_loss = ignore_pad_token_for_loss
         self.rouge_metric = load_metric('rouge')
@@ -68,15 +69,16 @@ class compute_qg:
         
         return preds, labels
 
-    def __call__(self, eval_preds):
+    def __call__(self, eval_preds, decoded = False):
         preds, labels = eval_preds
-        if isinstance(preds, tuple):
-            preds = preds[0]
-        preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True)
-        if self.ignore_pad_token_for_loss:
-            # Replace -100 in the labels as we can't decode them.
-            labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
-        labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
+        if not decoded:
+            if isinstance(preds, tuple):
+                preds = preds[0]
+            preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True)
+            if self.ignore_pad_token_for_loss:
+                # Replace -100 in the labels as we can't decode them.
+                labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
+            labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
         result = {}
         # Some simple post-processing
         preds_bleu, labels_bleu = self.postprocess_text_bleu(preds, labels)
@@ -101,7 +103,7 @@ class compute_qg:
 
 
 class compute_dialog:
-    def __init__(self, tokenizer, ignore_pad_token_for_loss = True):
+    def __init__(self, tokenizer = None, ignore_pad_token_for_loss = True):
         self.tokenizer = tokenizer
         self.ignore_pad_token_for_loss = ignore_pad_token_for_loss
         self.bleu_scorer = load_metric('bleu')
@@ -132,15 +134,16 @@ class compute_dialog:
         intra_dist2 = np.average(intra_dist2)
         return intra_dist1, intra_dist2, inter_dist1, inter_dist2
 
-    def __call__(self, eval_preds):
+    def __call__(self, eval_preds, decoded = False):
         preds, labels = eval_preds
-        if isinstance(preds, tuple):
-            preds = preds[0]
-        preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True)
-        if self.ignore_pad_token_for_loss:
-            # Replace -100 in the labels as we can't decode them.
-            labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
-        labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
+        if not decoded:
+            if isinstance(preds, tuple):
+                preds = preds[0]
+            preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True)
+            if self.ignore_pad_token_for_loss:
+                # Replace -100 in the labels as we can't decode them.
+                labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
+            labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
 
         # Some simple post-processing
         preds_bleu, labels_bleu = self.postprocess_text_bleu(preds, labels)
@@ -163,7 +166,7 @@ class compute_dialog:
 
 
 class compute_coqa:
-    def __init__(self, tokenizer, ignore_pad_token_for_loss = True):
+    def __init__(self, tokenizer = None, ignore_pad_token_for_loss = True):
         self.tokenizer = tokenizer
         self.ignore_pad_token_for_loss = ignore_pad_token_for_loss
 
@@ -193,15 +196,16 @@ class compute_coqa:
         intra_dist2 = np.average(intra_dist2)
         return intra_dist1, intra_dist2, inter_dist1, inter_dist2
 
-    def __call__(self, eval_preds):
+    def __call__(self, eval_preds, decoded = False):
         preds, labels = eval_preds
-        if isinstance(preds, tuple):
-            preds = preds[0]
-        preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True)
-        if self.ignore_pad_token_for_loss:
-            # Replace -100 in the labels as we can't decode them.
-            labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
-        labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
+        if not decoded:
+            if isinstance(preds, tuple):
+                preds = preds[0]
+            preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True)
+            if self.ignore_pad_token_for_loss:
+                # Replace -100 in the labels as we can't decode them.
+                labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
+            labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
 
         # Some simple post-processing
         preds_coqa, labels_coqa = self.postprocess_text_coqa(preds, labels)
