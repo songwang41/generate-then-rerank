@@ -7,6 +7,8 @@ from rouge_score import rouge_scorer, scoring
 from dataclasses import dataclass
 from datasets import  load_metric
 from .coqa_evaluator import CoQAEvaluator
+from nltk.translate import bleu_score
+from nltk.translate.bleu_score import SmoothingFunction
 import nltk
 import random
 
@@ -114,6 +116,31 @@ class compute_dialog:
 
         return preds, labels
 
+    def bleu(self, hyps, refs):
+        """ Calculate bleu 1/2. """
+        bleu_1 = []
+        bleu_2 = []
+        for hyp, ref in zip(hyps, refs):
+            try:
+                score = bleu_score.sentence_bleu(
+                    [ref], hyp,
+                    smoothing_function=SmoothingFunction().method7,
+                    weights=[1, 0, 0, 0])
+            except:
+                score = 0
+            bleu_1.append(score)
+            try:
+                score = bleu_score.sentence_bleu(
+                    [ref], hyp,
+                    smoothing_function=SmoothingFunction().method7,
+                    weights=[0.5, 0.5, 0, 0])
+            except:
+                score = 0
+            bleu_2.append(score)
+        bleu_1 = np.average(bleu_1)
+        bleu_2 = np.average(bleu_2)
+        return bleu_1, bleu_2
+
     def distinct(self, seqs):
         """ Calculate intra/inter distinct 1/2. """
         batch_size = len(seqs)
@@ -150,8 +177,9 @@ class compute_dialog:
 
         # Extract a few results from ROUGE
         result = {}
-        result['bleu_1'] = self.bleu_scorer._compute(preds_bleu, [[l] for l in labels_bleu], max_order=1)['bleu'] * 100
-        result['bleu_2'] = self.bleu_scorer._compute(preds_bleu, [[l] for l in labels_bleu], max_order=2)['bleu'] * 100
+        bleu_1, bleu_2 = self.bleu(preds_bleu, labels_bleu)
+        result['bleu_1'] =  bleu_1*100
+        result['bleu_2']  = bleu_2*100
         _,_,d1,d2 = self.distinct(preds_bleu)
         result['distinct_1'] = d1*100
         result['distinct_2'] = d2*100

@@ -6,6 +6,8 @@ from rouge_score import rouge_scorer, scoring
 from dataclasses import dataclass
 from datasets import  load_metric
 from .coqa_evaluator import CoQAEvaluator
+from nltk.translate import bleu_score
+from nltk.translate.bleu_score import SmoothingFunction
 import nltk
 import random
 
@@ -304,6 +306,31 @@ class compute_dialog:
         intra_dist1 = np.average(intra_dist1)
         intra_dist2 = np.average(intra_dist2)
         return intra_dist1, intra_dist2, inter_dist1, inter_dist2
+    
+    def bleu(self, hyps, refs):
+        """ Calculate bleu 1/2. """
+        bleu_1 = []
+        bleu_2 = []
+        for hyp, ref in zip(hyps, refs):
+            try:
+                score = bleu_score.sentence_bleu(
+                    [ref], hyp,
+                    smoothing_function=SmoothingFunction().method7,
+                    weights=[1, 0, 0, 0])
+            except:
+                score = 0
+            bleu_1.append(score)
+            try:
+                score = bleu_score.sentence_bleu(
+                    [ref], hyp,
+                    smoothing_function=SmoothingFunction().method7,
+                    weights=[0.5, 0.5, 0, 0])
+            except:
+                score = 0
+            bleu_2.append(score)
+        bleu_1 = np.average(bleu_1)
+        bleu_2 = np.average(bleu_2)
+        return bleu_1, bleu_2
 
     def __call__(self, eval_preds):
         preds, labels = eval_preds
@@ -313,8 +340,9 @@ class compute_dialog:
 
         # Extract a few results from ROUGE
         result = {}
-        result['bleu_1'] = self.bleu_scorer._compute(preds_bleu, [[l] for l in labels_bleu], max_order=1)['bleu'] * 100
-        result['bleu_2'] = self.bleu_scorer._compute(preds_bleu, [[l] for l in labels_bleu], max_order=2)['bleu'] * 100
+        bleu_1, bleu_2 = self.bleu(preds_bleu, labels_bleu)
+        result['bleu_1'] =  bleu_1*100
+        result['bleu_2']  = bleu_2*100
         _,_,d1,d2 = self.distinct(preds_bleu)
         result['distinct_1'] = d1*100
         result['distinct_2'] = d2*100
@@ -352,8 +380,7 @@ class compute_dialog:
                     bleu_score_1 = 0
                     bleu_score_2 = 0
                 else:
-                    bleu_score_1 = self.bleu_scorer._compute([ps_bleu[j]], [[targets_bleu[i]]], max_order = 1)['bleu']
-                    bleu_score_2 = self.bleu_scorer._compute([ps_bleu[j]], [[targets_bleu[i]]], max_order = 2)['bleu']
+                    bleu_score_1, bleu_score_2 = self.bleu([ps_bleu[j]], [targets_bleu[i]])
                 # _,_, d1, d2 = self.distinct([ps_bleu[j]])
                 scores.append((j + i * num_cand, bleu_score_1 / 0.5 + bleu_score_2 / 0.4, p))
 
@@ -415,8 +442,7 @@ class compute_dialog:
             ps = preds[i * num_cand: (i+1)*num_cand]
             ps_bleu = preds_bleu[i * num_cand: (i+1)*num_cand]
             for j,p in enumerate(ps):
-                bleu_score_1 = self.bleu_scorer._compute([ps_bleu[j]], [[targets_bleu[i]]], max_order = 1)['bleu']
-                bleu_score_2 = self.bleu_scorer._compute([ps_bleu[j]], [[targets_bleu[i]]], max_order = 2)['bleu']
+                bleu_score_1, bleu_score_2 = self.bleu([ps_bleu[j]], [targets_bleu[i]])
                 # _,_, d1, d2 = self.distinct([ps_bleu[j]])
                 scores.append( bleu_score_1 / 0.5 + bleu_score_2 / 0.4)
 
