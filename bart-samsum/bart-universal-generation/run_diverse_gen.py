@@ -28,7 +28,7 @@ import datasets
 import nltk  # Here to have a nice missing dependency error message early on
 import numpy as np
 from datasets import load_dataset, load_metric
-from data_utils.dataset import SamsumDataset
+from dataset import SamsumDataset
 
 import transformers
 from filelock import FileLock
@@ -209,12 +209,6 @@ class DataTrainingArguments:
             "which is used during ``evaluate`` and ``predict``."
         },
     )
-    use_tokenized_data: Optional[bool] = field(
-        default=True,
-        metadata={
-            "help": "Whether to use the tokenized data"
-        },
-    )
     ignore_pad_token_for_loss: bool = field(
         default=True,
         metadata={
@@ -225,9 +219,14 @@ class DataTrainingArguments:
         default=None, metadata={"help": "A prefix to add before every source text (useful for T5 models)."}
     )
 
-    save_name: Optional[str] = field(
-        default=None, metadata={"help": "the data path to save generated candidates"}
+    max_hop: Optional[int] = field(
+        default=7, metadata={"help": "max acceptable number of hops in discourse dependency relations."}
     )
+
+    relative_mode: Optional[str] = field(
+        default='uni', metadata={"help": "relative embedding mode: uni-directional, bi-directional, symmetric"}
+    )
+
     # def __post_init__(self):
     #     if self.dataset_name is None and self.train_file is None and self.validation_file is None:
     #         raise ValueError("Need either a dataset name or a training/validation file.")
@@ -460,10 +459,10 @@ def main():
                     predict_results.predictions, skip_special_tokens=True, clean_up_tokenization_spaces=True
                 )
                 predictions = [pred.strip() for pred in predictions]
-                if not os.path.exists('results/%s/%s'%(data_args.save_name, data_args.split)):
-                    os.makedirs('results/%s/%s'%(data_args.save_name, data_args.split))
+                if not os.path.exists('results/%s/%s_sample'%(data_args.dataset_name, data_args.split)):
+                    os.makedirs('results/%s/%s_sample'%(data_args.dataset_name, data_args.split))
 
-                output_prediction_file = "results/%s/%s/generated_predictions_%d.txt" % (data_args.save_name, data_args.split, trainer.args.generation_num_return_sequences)
+                output_prediction_file = "results/%s/%s_sample/generated_predictions_%d.txt" % (data_args.dataset_name, data_args.split, trainer.args.generation_num_return_sequences)
                 with open(output_prediction_file, "w") as writer:
                     writer.write("\n".join(predictions))
 
