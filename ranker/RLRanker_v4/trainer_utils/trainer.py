@@ -722,17 +722,17 @@ class Trainer:
                             self.training_bar.update(self.global_step - self.current_step)
                             self.current_step = self.global_step
 
-                if self.global_step >= max_steps:
-                    self.should_training_stop = True
-                    break
+                        if self.global_step >= max_steps:
+                            self.should_training_stop = True
+                            break
 
-                # we need to swith
-                if self.global_step % self.args.iteration_steps > self.args.iteration_reranker_steps:
-                    # train generatro
-                    train_flag = 1
-                elif 0 < self.global_step % self.args.iteration_steps < self.args.iteration_reranker_steps:
-                    # train reranker
-                    train_flag = 0
+                        # we need to swith
+                        if self.global_step % self.args.iteration_steps > self.args.iteration_reranker_steps:
+                            # train generatro
+                            train_flag = 1
+                        elif 0 < self.global_step % self.args.iteration_steps < self.args.iteration_reranker_steps:
+                            # train reranker
+                            train_flag = 0
 
 
             self._handle_log_save_eval_on_epoch([generator_model, reranker_model], [generator_tr_loss, reranker_tr_loss], train_flag)
