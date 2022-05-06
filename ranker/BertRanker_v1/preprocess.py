@@ -17,6 +17,7 @@ parser.add_argument("--dataset_name", type=str)
 parser.add_argument("--candidate_dir", type=str)
 parser.add_argument("--save_name", type=str)
 parser.add_argument("--num_cand", type=int)
+parser.add_argument("--tokenizer_name_or_path", type=str, default="roberta-base", help="specify the tokenizer name or path")
 #parser.add_argument("--golden", type=str, help="Gold output file.")
 args = parser.parse_args()
 
@@ -97,7 +98,7 @@ if __name__ == "__main__":
 
     assert compute_metrics is not None
 
-    tokenizer = RobertaTokenizer.from_pretrained('/weizhou_data/models/roberta-base')
+    tokenizer = RobertaTokenizer.from_pretrained(args.tokenizer_name_or_path)
 
     train_samples = generate_data(args.candidate_dir, args.data_dir, 'train',  tokenizer,  args.num_cand, compute_metrics)
 
