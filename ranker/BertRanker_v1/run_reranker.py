@@ -26,7 +26,7 @@ from typing import Optional
 import numpy as np
 from datasets import load_dataset, load_metric
 from data_utils.dataset import ReRankingDataset_train, ReRankingDataset_eval
-from model_utils import RobertaRanker, LongformerRanker
+from model_utils import RobertaRanker, LongformerRanker, BartRanker
 from trainer_utils.trainer import Trainer
 from data_utils.data_collator import DataCollatorForReranking
 
@@ -45,7 +45,7 @@ from transformers import (
     default_data_collator,
     set_seed,
 )
-from transformers import RobertaConfig, RobertaTokenizer, LongformerConfig, LongformerTokenizer
+from transformers import RobertaConfig, RobertaTokenizer, LongformerConfig, LongformerTokenizer, BartConfig, BartTokenizer
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version
 from transformers.utils.versions import require_version
@@ -325,8 +325,8 @@ def main():
     # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
     model_args.model_type = model_args.model_type.lower()
-    if  model_args.model_type not in ['roberta', 'longformer']:
-        raise ValueError('The model type should be either orberta or longformer')
+    if  model_args.model_type not in ['roberta', 'longformer', 'bart']:
+        raise ValueError('The model type should be either orberta or longformer or bart')
     if model_args.model_type.lower() == 'roberta':
         config = RobertaConfig.from_pretrained(
             model_args.config_name if model_args.config_name else model_args.model_name_or_path,
@@ -354,7 +354,7 @@ def main():
             use_auth_token=True if model_args.use_auth_token else None,
         )
 
-    else:
+    elif model_args.model_type.lower() == 'longformer':
         config = LongformerConfig.from_pretrained(
             model_args.config_name if model_args.config_name else model_args.model_name_or_path,
             cache_dir=model_args.cache_dir,
@@ -373,6 +373,32 @@ def main():
         setattr(config, "model_type", model_args.model_type)
 
         model = LongformerRanker.from_pretrained(
+            model_args.model_name_or_path,
+            from_tf=bool(".ckpt" in model_args.model_name_or_path),
+            config=config,
+            cache_dir=model_args.cache_dir,
+            revision=model_args.model_revision,
+            use_auth_token=True if model_args.use_auth_token else None,
+        )
+    else:
+        config = BartConfig.from_pretrained(
+            model_args.config_name if model_args.config_name else model_args.model_name_or_path,
+            cache_dir=model_args.cache_dir,
+            revision=model_args.model_revision,
+            use_auth_token=True if model_args.use_auth_token else None,
+        )
+
+        tokenizer = BartTokenizer.from_pretrained(
+            model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
+            cache_dir=model_args.cache_dir,
+            use_fast=model_args.use_fast_tokenizer,
+            revision=model_args.model_revision,
+            use_auth_token=True if model_args.use_auth_token else None,
+        )
+        setattr(config, "loss_type", model_args.loss_type)
+        setattr(config, "model_type", model_args.model_type)
+
+        model = BartRanker.from_pretrained(
             model_args.model_name_or_path,
             from_tf=bool(".ckpt" in model_args.model_name_or_path),
             config=config,
@@ -426,7 +452,7 @@ def main():
     #         logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
 
     # Get the metric function
-
+    assert data_args.task_name in ["sum", "qg", "coqa", "dialog"]
     if data_args.task_name == "sum":
         compute_metrics = compute_rouge()
     elif data_args.task_name == 'qg':
@@ -511,6 +537,12 @@ def main():
         trainer.log_metrics("predict", metrics)
         trainer.save_metrics("predict", metrics)
 
+        if trainer.is_world_process_zero():
+            predictions = predict_results.predictions
+            predictions = [pred.strip() for pred in predictions]
+            output_prediction_file = os.path.join(training_args.output_dir, "generated_predictions.txt")
+            with open(output_prediction_file, "w") as writer:
+                writer.write("\n".join(predictions))
         # for predict_dataset, task in zip(predict_datasets, tasks):
         #     # Removing the `label` columns because it contains -1 and Trainer won't like that.
         #     predict_dataset.remove_columns_("label")

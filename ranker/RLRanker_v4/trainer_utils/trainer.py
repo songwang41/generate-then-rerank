@@ -635,6 +635,7 @@ class Trainer:
                             scale_after = self.scaler.get_scale()
                         else:
                             self.reranker_optimizer.step()
+                            self.reranker_scheduler.step()
 
                         reranker_model.zero_grad()
                         generator_model.zero_grad()
@@ -709,6 +710,7 @@ class Trainer:
                             scale_after = self.scaler.get_scale()
                         else:
                             self.generator_optimizer.step()
+                            self.generator_scheduler.step()
 
                         reranker_model.zero_grad()
                         generator_model.zero_grad()
@@ -1008,7 +1010,7 @@ class Trainer:
         
         # use sampling not beam search
         gen_kwargs = {
-            "max_length": self.args.max_target_length,
+            "max_length": self.args.generator_max_target_length,
             "num_beams": 1,
             "do_sample":True,
             "num_return_sequences": self.args.num_cand_generated,
@@ -1063,14 +1065,14 @@ class Trainer:
 
         # use sampling not beam search
         gen_kwargs = {
-            "max_length": self.args.max_target_length,
+            "max_length": self.args.generator_max_target_length,
             "num_beams": 1,
             "do_sample":True,
             "num_return_sequences": self.args.num_cand_generated,
             "synced_gpus": True if is_deepspeed_zero3_enabled() else False,
             "return_dict_in_generate": True
         }
-        generator_outputs = unwrap_model(generator_model).generate_for_training(
+        generator_outputs = generator_model.generate_for_training(
             inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
             **gen_kwargs,
@@ -1096,15 +1098,23 @@ class Trainer:
         generated_tokens_indices = generated_tokens[:,1:].contiguous().view(-1).unsqueeze(1)
         generated_probs = torch.gather(generated_probs, 1, generated_tokens_indices)
         generated_probs = generated_probs.view(-1, seq_len) # (B * num_candates, L )
+        
+        
 
         generated_probs = torch.index_select(generated_probs, 0, candidate_indices) # (B * C, L) 
+
+        if self.args.reward_type == 'reranker_softmax':
+            # we take reshaping here to avoid no gradient
+            generated_probs = generated_probs.view(-1, self.args.num_cand_picked, seq_len)
+            generated_probs = generated_probs[:,1:,:]
+            generated_probs = generated_probs.contiguous().view(-1, seq_len)
 
 
         # compute reward
         with torch.no_grad():
             if self.args.use_baseline_reward:
                 greedy_gen_kwargs = {
-                    "max_length": self.args.max_target_length,
+                    "max_length": self.args.generator_max_target_length,
                     "num_beams": 1,
                     "do_sample":False,
                     "num_return_sequences": 1,
@@ -1120,6 +1130,7 @@ class Trainer:
                     greedy_outputs.detach(), skip_special_tokens=True, clean_up_tokenization_spaces=True
                 ) # list with length of B
 
+            assert self.args.reward_type in ['metric', 'reranker_minus', 'reranker_softmax']
             if self.args.reward_type == 'metric':
                 rewards = self.compute_metrics.get_reward(target_text, candidate_texts) # (B* C)
                 rewards = rewards.to(self.args.device)
@@ -1132,16 +1143,17 @@ class Trainer:
                     greedy_rewards = greedy_rewards.contiguous().view(-1)
                     greedy_rewards = greedy_rewards.unsqueeze(1).expand_as(generated_probs)
                     rewards = rewards - greedy_rewards
-            else:
+
+            elif self.args.reward_type == "reranker_minus":
                 reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts) # both (B, C, L)
 
                 reranker_output = reranker_model(input_ids=reranker_input_ids, attention_mask = reranker_attention_mask)
 
                 reranker_logits = reranker_output.logits #(B, C)
 
-                self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
+                # self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
 
-                self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
+                # self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
 
                 if self.args.reranker_loss_type == 'binary':
                     rewards_probs = torch.sigmoid(reranker_logits) #(B, C-1)
@@ -1153,11 +1165,47 @@ class Trainer:
                 # rewards_min = torch.min(rewards, dim=1, keepdim =True).values # (B, 1)
                 # rewards_base = (rewards_max+rewards_min) / 2
                 rewards_base = rewards[:,:1] # (B, 1)
-                rewards = torch.relu(rewards_base - rewards)
+                rewards = torch.relu(rewards_base - rewards) #always positive
                 rewards = self.args.reward_scaler * rewards
                 rewards = rewards.view(-1) #(B* C)
                 rewards = rewards.unsqueeze(1).expand_as(generated_probs)
 
+
+            elif self.args.reward_type == "reranker_softmax":
+                reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts) # both (B, C, L)
+
+                reranker_output = reranker_model(input_ids=reranker_input_ids, attention_mask = reranker_attention_mask)
+
+                reranker_logits = reranker_output.logits #(B, C)
+
+                pos_logits = reranker_logits[:, :1] # (B, 1)
+                neg_logits = reranker_logits[:, 1:] # (B, C-1)
+                pos_logits = pos_logits.expand_as(neg_logits) # (B, C-1)
+
+                neg_logits = neg_logits.unsqueeze(-1)
+                pos_logits = pos_logits.unsqueeze(-1) # both (B, C-1, 1)
+
+                logits_for_softmax = torch.cat((pos_logits, neg_logits), -1) # (B, C-1, 2)
+
+                logits_for_softmax = torch.softmax(logits_for_softmax, dim = -1) # (B, C-1, 2)
+
+                rewards_probs = logits_for_softmax[:,:,0] # (B, C-1)
+                # self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
+
+                # self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
+
+          
+                rewards = torch.log(rewards_probs+eps) # always neg
+                # rewards_max = torch.max(rewards, dim=1, keepdim =True).values # (B, 1)
+                # rewards_min = torch.min(rewards, dim=1, keepdim =True).values # (B, 1)
+                # rewards_base = (rewards_max+rewards_min) / 2
+                # rewards_base = rewards[:,:1] # (B, 1)
+                rewards = torch.relu(-rewards)
+                rewards = self.args.reward_scaler * rewards
+
+
+                rewards = rewards.view(-1) #(B* C-1)
+                rewards = rewards.unsqueeze(1).expand_as(generated_probs)
                 # if self.args.use_baseline_reward:
                 #     greedy_input_ids, greedy_attention_mask = self._get_reranker_input_ids(source_text, greedy_texts)
                 #     greedy_reranker_output = reranker_model(input_ids=greedy_input_ids, attention_mask = greedy_attention_mask)
@@ -1167,10 +1215,11 @@ class Trainer:
                 #     greedy_rewards = greedy_rewards.unsqueeze(1).expand_as(generated_probs)
                 #     rewards = rewards - greedy_rewards
                     
-
-        rl_loss = rewards*torch.log(generated_probs+eps) # (B*C, L)
+        
+        rl_loss = rewards*torch.log(generated_probs+eps) # (B*C-1, L)
         rl_loss = rl_loss.mean()
         loss = rl_loss
+
 
         # supervise training
         if self.args.generator_supervised:
@@ -1212,7 +1261,7 @@ class Trainer:
             for c in cs:
                 input_id = [self.reranker_tokenizer.cls_token_id] + source_ids
                 input_id += [self.reranker_tokenizer.sep_token_id]
-                input_id += encode_seq(c)[:self.args.max_target_length]
+                input_id += encode_seq(c)[:self.args.reranker_max_target_length]
                 reranker_input_ids.append(torch.LongTensor(input_id))
         
         reranker_input_ids = pad_sequence(reranker_input_ids, batch_first = True, padding_value = self.reranker_tokenizer.pad_token_id)
@@ -1593,12 +1642,33 @@ class Trainer:
         #predict for generator
         # we use beam search when evaluating generator
         if self.args.evaluate_generator or self.args.generate_eval_candidates:
-            gen_kwargs = {
-                "max_length": self.args.max_target_length,
-                "num_beams": self.args.num_cand_generated,
-                "num_return_sequences": self.args.num_cand_generated,
-                "synced_gpus": True if is_deepspeed_zero3_enabled() else False
-            }
+            assert self.args.generate_candidate_strategy in ['beamsearch', 'group', 'sampling']
+            if self.args.generate_candidate_strategy == 'beamsearch':
+                gen_kwargs = {
+                    "max_length": self.args.generator_max_target_length,
+                    "num_beams": self.args.num_cand_generated,
+                    "num_return_sequences": self.args.num_cand_generated,
+                    "synced_gpus": True if is_deepspeed_zero3_enabled() else False
+                }
+            elif self.args.generate_candidate_strategy == 'group':
+                # group beam search
+                gen_kwargs = {
+                    "max_length": self.args.generator_max_target_length,
+                    "num_beams": self.args.num_cand_generated,
+                    "num_beam_groups": self.args.num_cand_generated,
+                    "diversity_penalty": 1.0,
+                    "num_return_sequences": self.args.num_cand_generated,
+                    "synced_gpus": True if is_deepspeed_zero3_enabled() else False
+                }
+            elif self.args.generate_candidate_strategy == 'sampling':
+                # group beam search
+                gen_kwargs = {
+                    "max_length": self.args.generator_max_target_length,
+                    "num_beams": 1,
+                    "do_sample": True,
+                    "num_return_sequences": self.args.num_cand_generated,
+                    "synced_gpus": True if is_deepspeed_zero3_enabled() else False
+                }
 
             generated_tokens = self.generator_model.generate(
                 inputs["generator_input_ids"],
@@ -1624,11 +1694,11 @@ class Trainer:
         if self.args.generate_eval_candidates:
             # for compute loss of reranker, we need to prepare the reranker inputs here
             # 1. get the candidates 2. get the reranker input
-            _, candidate_texts,_ = self.compute_metrics.get_candidates(target_texts, generated_seqs, 
-                                self.args.num_cand_generated, self.args.num_cand_generated, 'bottom') # (B* (C-1)), list with length of B*C
-            reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts)
+            # _, candidate_texts,_ = self.compute_metrics.get_candidates(target_texts, generated_seqs, 
+            #                     self.args.num_cand_generated, self.args.num_cand_generated, 'bottom') # (B* (C-1)), list with length of B*C
+            reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, generated_seqs)
             # get candidates for reranker to select
-            candidates = [candidate_texts[i*self.args.num_cand_generated: (i+1)*self.args.num_cand_generated] for i in range(len(source_text))]
+            candidates = [generated_seqs[i*self.args.num_cand_generated: (i+1)*self.args.num_cand_generated] for i in range(len(source_text))]
             reranker_inputs = {
                 'reranker_input_ids': reranker_input_ids,
                 'reranker_attention_mask': reranker_attention_mask,

@@ -52,7 +52,7 @@ class ReRankingDataset(Dataset):
                     target_ids = None
                 else:
                     target_ids = generator_tokenizer.convert_tokens_to_ids(generator_tokenizer.tokenize(d['target']))
-                    target_ids = target_ids[:self.args.max_target_length]
+                    target_ids = target_ids[:self.args.generator_max_target_length]
                     target_ids = [generator_tokenizer.bos_token_id] + target_ids + [generator_tokenizer.eos_token_id]
 
 

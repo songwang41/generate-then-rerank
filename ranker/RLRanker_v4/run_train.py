@@ -185,8 +185,15 @@ class DataTrainingArguments:
         },
     )
 
-    max_target_length : Optional[int] = field(
+    reranker_max_target_length : Optional[int] = field(
         default=100,
+        metadata={
+            "help": "max candidate length"
+        },
+    )
+
+    generator_max_target_length: Optional[int] = field(
+        default=142,
         metadata={
             "help": "max candidate length"
         },
@@ -412,7 +419,8 @@ def main():
 
     # passing needed trainer args for generation
     setattr(training_args, "reranker_loss_type", model_args.loss_type)
-    setattr(training_args, "max_target_length", data_args.max_target_length)
+    setattr(training_args, "reranker_max_target_length", data_args.reranker_max_target_length)
+    setattr(training_args, "generator_max_target_length", data_args.generator_max_target_length)
     setattr(training_args, "generate_eval_candidates", data_args.generate_eval_candidates)
     setattr(training_args, 'reranker_max_source_length', data_args.reranker_max_source_length)
 
@@ -484,6 +492,18 @@ def main():
         if trainer.is_local_process_zero():
             trainer.metrics_tracker['test_results'] = metrics
 
+        if trainer.is_world_process_zero():
+            generator_predictions = predict_results.generator_predictions
+            generator_predictions = [pred.strip() for pred in generator_predictions]
+            output_prediction_file = os.path.join(training_args.output_dir, "generator_generated_predictions.txt")
+            with open(output_prediction_file, "w") as writer:
+                writer.write("\n".join(generator_predictions))
+
+            reranker_predictions = predict_results.reranker_predictions
+            reranker_predictions = [pred.strip() for pred in reranker_predictions]
+            output_prediction_file = os.path.join(training_args.output_dir, "reranker_generated_predictions.txt")
+            with open(output_prediction_file, "w") as writer:
+                writer.write("\n".join(reranker_predictions))
         # for predict_dataset, task in zip(predict_datasets, tasks):
         #     # Removing the `label` columns because it contains -1 and Trainer won't like that.
         #     predict_dataset.remove_columns_("label")

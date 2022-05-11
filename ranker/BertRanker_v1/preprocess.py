@@ -1,6 +1,6 @@
 import json
 from rouge_score import rouge_scorer, scoring
-from transformers import RobertaTokenizer
+from transformers import RobertaTokenizerFast, BartTokenizerFast
 import nltk
 import os
 from tqdm import tqdm
@@ -17,6 +17,8 @@ parser.add_argument("--dataset_name", type=str)
 parser.add_argument("--candidate_dir", type=str)
 parser.add_argument("--save_name", type=str)
 parser.add_argument("--num_cand", type=int)
+parser.add_argument("--tokenizer_dir", type=str)
+parser.add_argument("--tokenizer_type", type=str)
 #parser.add_argument("--golden", type=str, help="Gold output file.")
 args = parser.parse_args()
 
@@ -97,7 +99,11 @@ if __name__ == "__main__":
 
     assert compute_metrics is not None
 
-    tokenizer = RobertaTokenizer.from_pretrained('/weizhou_data/models/roberta-base')
+    assert args.tokenizer_type in ['roberta', 'bart']
+    if args.tokenizer_type == 'roberta':
+        tokenizer = RobertaTokenizerFast.from_pretrained(args.tokenizer_dir)
+    else:
+        tokenizer = BartTokenizerFast.from_pretrained(args.tokenizer_dir)
 
     train_samples = generate_data(args.candidate_dir, args.data_dir, 'train',  tokenizer,  args.num_cand, compute_metrics)
 

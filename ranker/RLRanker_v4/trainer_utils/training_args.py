@@ -334,7 +334,7 @@ class TrainingArguments:
     generator_supervised: bool = field(default=True, metadata={"help": "To also train generator in superived training"})
     use_baseline_reward:  bool = field(default=True, metadata={"help": "To use baselien in reinforcement learning"})
     reward_type: Optional[str] = field(
-        default='reranker',
+        default='reranker_minus',
         metadata={'help': "how the reward is compusted: metric/reranker"}
     )
     generator_supervised_lambda: float = field(default=1.0, metadata={"help": "The weigth of supervised loss in training the generator"})
@@ -350,9 +350,15 @@ class TrainingArguments:
     )
     candidate_pick_strategy: Optional[str] = field(
         default="random",
-         metadata={"help": "How to pick the candidate."
+        metadata={"help": "How to pick the candidate."
                             "random: randomly pick, top: pick the best candidates, bottom: pick the worst candidates, top-bottom"},
     )
+
+    generate_candidate_strategy: Optional[str] = field(
+        default= "beamsearch",
+        metadata={"help": "the strategy to generate evaluation candidates, beamsearch/group/sampling"},
+    )
+
     training_mode: Optional[str] = field(
         default='iterative',
         metadata={"help": "to train generator and reranker iteratively(iterative) or co-training(co-train)"}

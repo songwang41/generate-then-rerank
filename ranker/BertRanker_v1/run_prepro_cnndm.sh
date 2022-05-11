@@ -1,0 +1,1 @@
+python preprocess.py --data_dir ../GANRanker/data/cnndm --dataset_name cnndm --candidate_dir ../../bart-samsum/bart-universal-generation/results/cnndm-large --num_cand 16 --save_name cnndm-large --tokenizer_dir ../../../models/roberta-large

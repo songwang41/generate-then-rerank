@@ -21,7 +21,6 @@ class compute_rouge:
         preds = [pred.strip() for pred in preds]
         labels = [label.strip() for label in labels]
 
-        # rougeLSum expects newline after each sentence
         preds = ["\n".join(nltk.sent_tokenize(pred)) for pred in preds]
         labels = ["\n".join(nltk.sent_tokenize(label)) for label in labels]
 
@@ -64,9 +63,10 @@ class compute_rouge:
         for i,t in enumerate(targets_processed):
             scores = []
             ps = preds_processed[i * num_cand: (i+1)*num_cand]
+            ps_nopro = preds[i * num_cand: (i+1)*num_cand] # for the candidates, we use no preprocessed version
             for j,p in enumerate(ps):
                 s = self.scorer.score(t, p)
-                scores.append((j + i * num_cand, s["rouge1"].fmeasure / 0.45 + s["rouge2"].fmeasure / 0.2 + s["rougeLsum"].fmeasure / 0.4, p))
+                scores.append((j + i * num_cand, s["rouge1"].fmeasure / 0.45 + s["rouge2"].fmeasure / 0.2 + s["rougeLsum"].fmeasure / 0.4, ps_nopro[j].strip()))
 
             scores = sorted(scores, key = lambda x: x[1], reverse=True)
             
