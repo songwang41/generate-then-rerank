@@ -47,4 +47,5 @@ def create_long_model(save_model_to, model_name_or_path="roberta-base", max_pos=
 if __name__=="__main__":
     fire.Fire(create_long_model)
 
-create_long_model("../../models/roberta-large-1024", model_name_or_path="roberta-large", max_pos=1024)
+    # create_long_model("../../models/roberta-large-1024", model_name_or_path="roberta-large", max_pos=1024)
+    # python create_long_model.py --save_model_to ./models/robarta-large-1024-test --model_name_or_path "roberta-large" --max_pos 1024
