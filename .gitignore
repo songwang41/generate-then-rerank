@@ -2,3 +2,13 @@
 /long-term
 /bart-samsum/data/*
 /ranker/data/*
+/ranker/SimCLR-AUG/result/*
+/ranker/BertRanker/data/*
+/ranker/GANRanker/data/*
+/ranker/RLRanker_v1/data/*
+/ranker/RLRanker_v4/data/*
+/bart-samsum/bart-universal-generation/save/*
+/bart-samsum/bart-universal-generation/results/*
+/ranker/BertRanker_v1/saves/*
+/ranker/RLRanker_v4/saves/*
+/ranker/BertRanker_v1/data/*
