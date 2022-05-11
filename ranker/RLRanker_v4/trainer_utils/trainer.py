@@ -712,6 +712,8 @@ class Trainer:
                             self.generator_optimizer.step()
                             self.generator_scheduler.step()
 
+                        # loss.backward()
+
                         reranker_model.zero_grad()
                         generator_model.zero_grad()
                         self.global_step += 1
@@ -971,6 +973,7 @@ class Trainer:
         else:
             loss.backward()
 
+
         return loss.detach()
 
     def compute_loss_reranker_eval(self, reranker_model, inputs, return_outputs=False):
@@ -1072,7 +1075,7 @@ class Trainer:
             "synced_gpus": True if is_deepspeed_zero3_enabled() else False,
             "return_dict_in_generate": True
         }
-        generator_outputs = generator_model.generate_for_training(
+        generator_outputs = unwrap_model(generator_model).generate_for_training(
             inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
             **gen_kwargs,
