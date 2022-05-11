@@ -2,6 +2,7 @@
 from transformers import AutoTokenizer, AutoModel
 import numpy as np
 import fire
+import torch
 
 
 # from transformers import RobertaTokenizer, RobertaModel
@@ -45,3 +46,5 @@ def create_long_model(save_model_to, model_name_or_path="roberta-base", max_pos=
 
 if __name__=="__main__":
     fire.Fire(create_long_model)
+
+create_long_model("../../models/roberta-large-1024", model_name_or_path="roberta-large", max_pos=1024)
