@@ -21,6 +21,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--data_dir", type=str)
 parser.add_argument("--dataset_name", type=str)
 parser.add_argument("--prediction_dir", type=str)
+parser.add_argument("--ref_file_type", type=str)
 #parser.add_argument("--golden", type=str, help="Gold output file.")
 args = parser.parse_args()
 
@@ -43,7 +44,11 @@ def read_prediction(prediciton_dir):
     return preds
 
 if __name__ == "__main__":
-    refs = read_data(args.data_dir)
+    if args.ref_file_type == 'json':
+        refs = read_data(args.data_dir)
+    elif args.ref_file_type == 'txt':
+        refs = read_prediction(args.data_dir)
+
     preds = read_prediction(args.prediction_dir)
     print('==============================================================')
     print(args.dataset_name)

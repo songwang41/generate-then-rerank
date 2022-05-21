@@ -23,7 +23,10 @@ def encode_seq(tokenizer, seq):
     if seq == [] or seq == "":
         return []
     else:
-        return tokenizer.encode(seq, add_special_tokens=False)
+        if isinstance(seq, str):
+            return tokenizer.encode(seq, add_special_tokens=False)
+        else:
+            return tokenizer.convert_tokens_to_ids(seq)
 
 
 class ReRankingDataset_eval(Dataset):
