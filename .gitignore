@@ -13,6 +13,7 @@
 /ranker/RLRanker_v4/saves/*
 /ranker/BertRanker_v1/data/*
 /eval_glge/eval_ours/qg/data/*
+/ranker/RLRanker_v7/*.sh
 
 
 # Initially taken from Github's Python gitignore file

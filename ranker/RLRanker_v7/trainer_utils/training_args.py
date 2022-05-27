@@ -338,18 +338,29 @@ class TrainingArguments:
         metadata={'help': "how the reward is compusted: metric/reranker"}
     )
     generator_supervised_lambda: float = field(default=1.0, metadata={"help": "The weigth of supervised loss in training the generator"})
-    reward_scaler: float = field(default=1.0, metadata={"help": "The weigth of rewards in training the generator"})
+    reranker_reward_scaler: float = field(default=1.0, metadata={"help": "The weigth of rewards given by reranker in training the generator"})
+    metric_reward_scaler: float = field(default=1.0, metadata={"help": "The weigth of rewards given by metric in training the generator"})
+    normalize_rewards: bool = field(default=False, metadata={"help": "normalize the rewards"})
     num_cand_generated: Optional[int] = field(
         default=16,
-        metadata={"help": "Number of candidate generate by the generator at each step of training."},
+        metadata={"help": "Number of candidate generate by the generator at each step of training reranker."},
+    )
+    generator_num_cand_generated: Optional[int] = field(
+        default=16,
+        metadata={"help": "Number of candidate generate by the generator at each step of training generator."},
     )
     num_cand_picked: Optional[int] = field(
         default=3,
-        metadata={"help": "Number of candidates picked at each step of training, the num_cand_picked is equal to:"
+        metadata={"help": "Number of candidates picked at each step of training reranker, the num_cand_picked is equal to:"
+                    "1(positive sample) + number of candidates pick in the generator-generated candidates."},
+    )
+    generator_num_cand_picked: Optional[int] = field(
+        default=3,
+        metadata={"help": "Number of candidates picked at each step of training generator, the num_cand_picked is equal to:"
                     "1(positive sample) + number of candidates pick in the generator-generated candidates."},
     )
     candidate_pick_strategy: Optional[str] = field(
-        default="random",
+        default="bottom",
         metadata={"help": "How to pick the candidate."
                             "random: randomly pick, top: pick the best candidates, bottom: pick the worst candidates, top-bottom"},
     )

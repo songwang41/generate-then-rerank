@@ -1071,7 +1071,7 @@ class Trainer:
             "max_length": self.args.generator_max_target_length,
             "num_beams": 1,
             "do_sample":True,
-            "num_return_sequences": self.args.num_cand_generated,
+            "num_return_sequences": self.args.generator_num_cand_generated,
             "synced_gpus": True if is_deepspeed_zero3_enabled() else False,
             "return_dict_in_generate": True
         }
@@ -1087,10 +1087,12 @@ class Trainer:
                     generated_tokens.detach(), skip_special_tokens=True, clean_up_tokenization_spaces=True
                 )
 
+        # candidate_indices (B *C), candidate_texts list with lenght of B*C, candidate_scores (B, C)
         candidate_indices, candidate_texts, candidate_scores = self.compute_metrics.get_candidates(target_text, generated_seqs, 
-                                self.args.num_cand_generated, self.args.num_cand_picked,  self.args.candidate_pick_strategy) # (B* C), list with length of B*C
+                                self.args.generator_num_cand_generated, self.args.generator_num_cand_picked,  self.args.candidate_pick_strategy) # (B* C), list with length of B*C
         
         candidate_indices = candidate_indices.to(self.args.device)
+        candidate_scores = candidate_scores.to(self.args.device)
 
         eps = 1e-7
         # get the probability of generated tokens
@@ -1106,11 +1108,11 @@ class Trainer:
 
         generated_probs = torch.index_select(generated_probs, 0, candidate_indices) # (B * C, L) 
 
-        if self.args.reward_type == 'reranker_softmax':
-            # we take reshaping here to avoid no gradient
-            generated_probs = generated_probs.view(-1, self.args.num_cand_picked, seq_len)
-            generated_probs = generated_probs[:,1:,:]
-            generated_probs = generated_probs.contiguous().view(-1, seq_len)
+        # if self.args.reward_type == 'reranker_softmax':
+        #     # we take reshaping here to avoid no gradient
+        #     generated_probs = generated_probs.view(-1, self.args.generator_num_cand_picked, seq_len)
+        #     generated_probs = generated_probs[:,1:,:]
+        #     generated_probs = generated_probs.contiguous().view(-1, seq_len)
 
 
         # compute reward
@@ -1133,93 +1135,44 @@ class Trainer:
                     greedy_outputs.detach(), skip_special_tokens=True, clean_up_tokenization_spaces=True
                 ) # list with length of B
 
-            assert self.args.reward_type in ['metric', 'reranker_minus', 'reranker_softmax']
-            if self.args.reward_type == 'metric':
-                rewards = self.compute_metrics.get_reward(target_text, candidate_texts) # (B* C)
-                rewards = rewards.to(self.args.device)
-                rewards = rewards.unsqueeze(1).expand_as(generated_probs)
 
-                if self.args.use_baseline_reward:
-                    greedy_rewards = self.compute_metrics.get_reward(target_text, greedy_texts) #(B)
-                    greedy_rewards = greedy_rewards.to(self.args.device)
-                    greedy_rewards = greedy_rewards.unsqueeze(1).expand(-1, self.args.num_cand_picked)
-                    greedy_rewards = greedy_rewards.contiguous().view(-1)
-                    greedy_rewards = greedy_rewards.unsqueeze(1).expand_as(generated_probs)
-                    rewards = greedy_rewards - rewards
+            reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts) # both (B, C, L)
 
-            elif self.args.reward_type == "reranker_minus":
-                reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts) # both (B, C, L)
+            reranker_output = reranker_model(input_ids=reranker_input_ids, attention_mask = reranker_attention_mask)
 
-                reranker_output = reranker_model(input_ids=reranker_input_ids, attention_mask = reranker_attention_mask)
+            reranker_logits = reranker_output.logits #(B, C)
 
-                reranker_logits = reranker_output.logits #(B, C)
+            # self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
 
-                # self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
+            # self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
 
-                # self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
+            # if self.args.reranker_loss_type == 'binary':
+            #     rewards_probs = torch.sigmoid(reranker_logits) #(B, C-1)
+            # else:
+            #     rewards_probs = torch.softmax(reranker_logits, dim = 1)
+            
+            # rewards = torch.log(rewards_probs+eps)
+            # rewards_max = torch.max(rewards, dim=1, keepdim =True).values # (B, 1)
+            # rewards_min = torch.min(rewards, dim=1, keepdim =True).values # (B, 1)
+            # rewards_base = (rewards_max+rewards_min) / 2
+            # rewards_base = rewards[:,:1] # (B, 1)
+            reranker_rewards_baseline = torch.mean(reranker_logits, dim = -1, keepdim = True) #(B, 1)
+            metric_rewards_baseline = torch.mean(candidate_scores, dim = -1, keepdim= True)
 
-                if self.args.reranker_loss_type == 'binary':
-                    rewards_probs = torch.sigmoid(reranker_logits) #(B, C-1)
-                else:
-                    rewards_probs = torch.softmax(reranker_logits, dim = 1)
-                
-                rewards = torch.log(rewards_probs+eps)
-                # rewards_max = torch.max(rewards, dim=1, keepdim =True).values # (B, 1)
-                # rewards_min = torch.min(rewards, dim=1, keepdim =True).values # (B, 1)
-                # rewards_base = (rewards_max+rewards_min) / 2
-                rewards_base = rewards[:,:1] # (B, 1)
-                rewards = torch.relu(rewards_base - rewards) #always positive
-                rewards = self.args.reward_scaler * rewards
-                rewards = rewards.view(-1) #(B* C)
-                rewards = rewards.unsqueeze(1).expand_as(generated_probs)
+            reranker_rewards = reranker_logits - reranker_rewards_baseline
+            metric_rewards = candidate_scores - metric_rewards_baseline
+            if self.args.normalize_rewards:
+                rererank_rewards_std = torch.std(reranker_rewards, dim=1, keepdim = True)
+                metric_rewards_std = torch.std(metric_rewards, dim=1, keepdim = True)
+                reranker_rewards = reranker_rewards / (rererank_rewards_std + eps)
+                metric_rewards = metric_rewards / (metric_rewards_std + eps)
+            # rewards = torch.relu(rewards_base - rewards) #always positive
+            rewards = self.args.reranker_reward_scaler * reranker_rewards + self.args.metric_reward_scaler * metric_rewards
+            rewards = rewards.view(-1) #(B* C)
+            rewards = rewards.unsqueeze(1).expand_as(generated_probs)
 
-
-            elif self.args.reward_type == "reranker_softmax":
-                reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts) # both (B, C, L)
-
-                reranker_output = reranker_model(input_ids=reranker_input_ids, attention_mask = reranker_attention_mask)
-
-                reranker_logits = reranker_output.logits #(B, C)
-
-                pos_logits = reranker_logits[:, :1] # (B, 1)
-                neg_logits = reranker_logits[:, 1:] # (B, C-1)
-                pos_logits = pos_logits.expand_as(neg_logits) # (B, C-1)
-
-                neg_logits = neg_logits.unsqueeze(-1)
-                pos_logits = pos_logits.unsqueeze(-1) # both (B, C-1, 1)
-
-                logits_for_softmax = torch.cat((pos_logits, neg_logits), -1) # (B, C-1, 2)
-
-                logits_for_softmax = torch.softmax(logits_for_softmax, dim = -1) # (B, C-1, 2)
-
-                rewards_probs = logits_for_softmax[:,:,0] # (B, C-1)
-                # self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
-
-                # self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
-
-          
-                rewards = torch.log(rewards_probs+eps) # always neg
-                # rewards_max = torch.max(rewards, dim=1, keepdim =True).values # (B, 1)
-                # rewards_min = torch.min(rewards, dim=1, keepdim =True).values # (B, 1)
-                # rewards_base = (rewards_max+rewards_min) / 2
-                # rewards_base = rewards[:,:1] # (B, 1)
-                rewards = torch.relu(-rewards)
-                rewards = self.args.reward_scaler * rewards
-
-
-                rewards = rewards.view(-1) #(B* C-1)
-                rewards = rewards.unsqueeze(1).expand_as(generated_probs)
-                # if self.args.use_baseline_reward:
-                #     greedy_input_ids, greedy_attention_mask = self._get_reranker_input_ids(source_text, greedy_texts)
-                #     greedy_reranker_output = reranker_model(input_ids=greedy_input_ids, attention_mask = greedy_attention_mask)
-                #     greedy_logits = greedy_reranker_output.logits #(B, 1)
-                #     greedy_rewards = greedy_logits.expand(-1, self.args.num_cand_picked)
-                #     greedy_rewards = greedy_rewards.contiguous().view(-1)
-                #     greedy_rewards = greedy_rewards.unsqueeze(1).expand_as(generated_probs)
-                #     rewards = rewards - greedy_rewards
-                    
         
-        rl_loss = rewards*torch.log(generated_probs+eps) # (B*C-1, L)
+        rl_loss = -rewards*torch.log(generated_probs+eps) # (B*C-1, L)
         rl_loss = rl_loss.mean()
         loss = rl_loss
 
