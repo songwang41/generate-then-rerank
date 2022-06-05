@@ -424,8 +424,8 @@ class Trainer:
             self.metrics_tracker['eval_metrics'] = []
 
         self.reward_tracker = {
-            'scores': [],
-            'reranker_logits': []
+            'metric_rewards': [],
+            'reranker_rewards': []
         }
 
         # very last
@@ -1032,14 +1032,14 @@ class Trainer:
         _, candidate_texts, candidate_scores = self.compute_metrics.get_candidates(target_text,  generated_seqs, 
                                 self.args.num_cand_generated, self.args.num_cand_picked, self.args.candidate_pick_strategy) # (B* (C-1)), list with length of B*C
         
-        self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
+        # self.reward_tracker['scores'].append(torch.var(candidate_scores, dim=1).mean().item())
         
         # process input for input
         reranker_input_ids, reranker_attention_mask = self._get_reranker_input_ids(source_text, candidate_texts) # both (B, C, L)
 
         reranker_output = reranker_model(input_ids=reranker_input_ids, attention_mask = reranker_attention_mask)
 
-        self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
+        # self.reward_tracker['reranker_logits'].append(torch.var(reranker_output.logits, dim=1).mean().item())
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
@@ -1161,6 +1161,10 @@ class Trainer:
 
             reranker_rewards = reranker_logits - reranker_rewards_baseline
             metric_rewards = candidate_scores - metric_rewards_baseline
+
+            self.reward_tracker['reranker_rewards'].append(reranker_rewards.detach().cpu().numpy().tolist())
+            self.reward_tracker['metric_rewards'].append(metric_rewards.detach().cpu().numpy().tolist())
+
             if self.args.normalize_rewards:
                 rererank_rewards_std = torch.std(reranker_rewards, dim=1, keepdim = True)
                 metric_rewards_std = torch.std(metric_rewards, dim=1, keepdim = True)

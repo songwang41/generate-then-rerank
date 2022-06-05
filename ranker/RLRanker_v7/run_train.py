@@ -464,7 +464,7 @@ def main():
 
         # Loop to handle MNLI double evaluation (matched, mis-matched)
 
-        metrics = trainer.evaluate(eval_dataset=test_dataset)
+        metrics = trainer.evaluate(eval_dataset=eval_dataset)
 
         max_eval_samples = (
             data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
@@ -526,9 +526,9 @@ def main():
     #     with open(os.path.join(training_args.output_dir, 'metrics_tracker.json'), 'w', encoding='utf-8') as f:
     #         json.dump(trainer.metrics_tracker, f)
 
-    # if trainer.is_local_process_zero():
-    #     with open(os.path.join(training_args.output_dir, 'reward_tracker.json'), 'w', encoding='utf-8') as f:
-    #         json.dump(trainer.reward_tracker, f)
+    if training_args.do_train and trainer.is_local_process_zero():
+        with open(os.path.join(training_args.output_dir, 'reward_tracker.json'), 'w', encoding='utf-8') as f:
+            json.dump(trainer.reward_tracker, f)
 
     if training_args.push_to_hub:
         kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "text-classification"}

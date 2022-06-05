@@ -14,6 +14,7 @@
 /ranker/BertRanker_v1/data/*
 /eval_glge/eval_ours/qg/data/*
 /ranker/RLRanker_v7/*.sh
+/UniXcoder/*/data
 
 
 # Initially taken from Github's Python gitignore file

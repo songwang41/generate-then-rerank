@@ -1,0 +1,150 @@
+<mask0>void function ( ) { functionVarMappings . forEach ( ( k , v ) -> { Object loc0 = ( ( ExprNode ) k ) . loc0 ; nodeNames . put ( loc0 . toString ( ) , k ) ; } ) ; }</s>
+<mask0>HashMap function ( ) { return functionVarMappings ; }</s>
+<mask0>HashMap function ( ) { HashMap loc0 = new HashMap ( ) ; functionVarMappings . forEach ( ( e , loc1 ) -> { if ( e . getDeclaringClass ( ) == null ) loc1 . inheritDocBlockDefaultValues ( loc0 ) ; loc0 . put ( e . getName ( ) , loc1 ) ; } ) ; return loc0 ; }
+<mask0>Sha256Hash function ( byte [ ] arg0 ) { byte [ ] loc0 = new byte [ arg0 . length ] ; FileInputStream loc1 = null ; try { loc1 = new FileInputStream ( arg0 ) ; char [ ] loc2 = new char [ 8192 ] ; int loc3 ; int loc4 ; while ( ( loc4 = loc1 . read ( loc2 ) ) != - 1 ) { loc0 [ loc4 ] = loc2 [ 0 ] ; } } finally { try { if ( loc1 != null ) loc1 . close ( ) ; } catch ( IOException loc0 ) { } } return new Sha256Hash ( Arrays . copyOf ( loc0 , loc0 . length ) ; }
+<mask0>Sha256Hash function ( byte [ ] arg0 ) { try { return fromBytes ( toBigInteger ( arg0 ) ) ; } catch ( IOException loc0 ) { throw new IllegalStateException ( loc0 ) ; } }</s>
+<mask0>Sha256Hash function ( File arg0 ) { return new Sha256Hash ( computeHash ( arg0 . getPath ( ) , true ) ) ; }</s>
+<mask0>String function ( Object arg0 ) { if ( arg0 == null ) { throw new NullPointerException ( "srini_string" ) ; } return id ; }</s>
+<mask0>String function ( Object arg0 , boolean arg1 ) { if ( arg1 ) { String loc0 ; try { loc0 = OBJECT_ID_PREFIX + UUID . randomUUID ( ) . toString ( ) . replaceAll ( "srini_string" , "srini_string" ) ; } catch ( java . lang . IllegalArgumentException loc1 ) { loc1 . printStackTrace ( ) ; loc0 = OBJECT_ID_PREFIX + UUID . randomUUID ( ) . toString ( ) . replaceAll ( "srini_string" , "srini_string" ) ; } return arg0 . getClass ( ) . getName ( ) + "srini_string" + loc0 ; }
+<mask0>String function ( Object arg0 , boolean arg1 ) { if ( arg0 == null ) { return null ; } if ( arg1 ) { try { arg0 = new IdentityObject ( ) ; } catch ( Exception loc0 ) { LOG . error ( "srini_string" , loc0 ) ; } } return id ; }</s>
+<mask0>Matcher < T > function ( final T arg0 ) { return new >ComparableMatcher < T > ( arg0 ) ; }</s>
+<mask0>Matcher < T > function ( final T arg0 ) { return new Matcher < T > ( ) { @ Override public boolean matches ( T arg1 , T arg2 ) { return arg0 . compareTo ( arg2 ) >= 0 ; } } ; }
+<mask0>Matcher < T > function ( final T arg0 ) { return new ComparisonMatcher < T > ( arg0 ) ; }</s>
+<mask0>int function ( ) { return denom ; }
+<mask0>int function ( ) { return denom ; }
+<mask0>int function ( ) { return denom ; }
+<mask0>String function ( ) { return id_str ; }</s>
+<mask0>GenericJSONBuilder function ( Date arg0 ) { this . created_at = arg0 ; return this ; }
+<mask0>Condition function ( ) { return null ; }</s>
+<mask0>void function (BundleContext arg0 ) { }
+<mask0>void function ( BundleContext arg0 ) { }
+<mask0>void function ( BundleContext arg0 ) { }
+<mask0>void function ( ) { when ( mTestStream . seek ( mBlockSize ) ) . thenReturn ( mBlockSize ) ; mTestStream . seek ( mBufferSize ) ; when ( mTestStream . read ( ) ) . thenReturn ( mBlockSize ) ; }
+<mask0>void function ( ) { Assert . assertTrue ( mTestStream . seek ( mBufferSize ) > 0 ) ; }</s>
+<mask0>void function ( ) { mTestStream . seek ( 4 ) ; Assert . assertTrue ( mTestStream . seek ( mBufferSize ) ) ; }</s>
+<mask0>void function ( ) { SecurityManager loc0 = System . getSecurityManager ( ) ; if ( loc0 != null ) { loc0 . checkPermission ( new RuntimePermission ( "srini_string" ) ) ; } try { gc ( ) ; } finally { Utilities . shutdown ( loc0 ) ; } }
+<mask0>void function ( ) { try { while ( isDone ( ) ) { performGarbageCollection ( ) ; } } finally { Utilities . awaitDone ( ) ; } }</s>
+<mask0>void function ( ) { try { wait ( 1000L ) ; } catch ( InterruptedException loc0 ) { throw formatRuntimeException ( loc0 ) ; } finally { awaitDone ( ) ; } }</s>
+<mask0>void function ( ) { mManager = TransferManager . getInstance ( ) ; mStream = new S3ADirectOutputStream ( new FileOutputStream ( BUCKET_NAME ) ) ; mManager . setStorageType ( S3ADirectOutputStream . S3ADIRECT_STORAGE_TYPE ) ; }
+<mask0>void function ( final TransferManager arg0 ) { mManager = arg0 ; KEY = System . getProperty ( "srini_string" ) ; }</s>
+<mask0>void function ( ) { mManager = new TransferManager ( ) ; }</s>
+<mask0>String function ( DocError arg0 ) { return arg0 . getValue ( ) ; }</s>
+<mask0>String function ( DocsModel arg0 , int arg1 , int arg2 ) { return arg0 . getDoc ( ) == null ? defaultFor ( arg1 , arg2 ) : arg0 . getDoc ( ) . replace ( LINE_SEPARATOR , LINE_SEPARATOR ) ; }
+<mask0>String function ( ) { return ( this . getDoc ( ) ) . replaceAll ( "srini_string" ) + LINE_SEPARATOR ; }</s>
+<mask0>Logger function ( ) { return LOG ; }</s>
+<mask0>Level function ( ) { return getLog ( LOG ) ; }</s>
+<mask0>Level function ( ) { return Level . valueOf ( System . getProperty ( "srini_string" ) ) ; }
+<mask0> TSTNode function ( final char arg0 ) { if ( al . contains ( arg0 ) ) return root ; else { traverse ( al , 0 , al . size ( ) - 1 , arg0 ) ; al . remove ( al . size ( ) - 1 ) ; } return al . get ( al . size ( ) - 1 ) ; }
+<mask0> TSTNode function ( int arg0 ) { if ( arg0 > al . size ( ) ) return find ( arg0 ) ; return find ( al . get ( arg0 ) ) ; }</s>
+<mask0>String function ( final String arg0 ) { if ( is_End_Of_String ) { find ( 0 ) ; } else { traverse ( 0 ) ; } return al . get ( al . size ( ) - 1 ) . data ; }</s>
+<mask0>void function ( ) { prodscan . close ( ) ; tx . close ( ) ; nextblknum = 0 ; if ( lhsscan != null ) { lhsscan . close ( ) ; } if ( rhsscan != null ) { rhsscan . close ( ) ; } filesize = 0 ; }
+<mask0>void function ( ) { prodscan . close ( ) ; rhsscan . close ( ) ; nextblknum . close ( ) ; }</s>
+<mask0>void function ( ) { prodscan . close ( true ) ; rhsscan . close ( true ) ; size = 0 ; }</s>
+<mask0>Map < String , Object > function ( String arg0 ) { Object loc0 = System . getProperty ( arg0 ) ; if ( loc0 instanceof Map ) { return ( Map < String , Object > ) loc0 ; } return Collections . emptyMap ( ) ; }
+<mask0>Map < String , String > function ( final String arg0 ) { return new LinkedHashMap < String , String > ( ) ; }</s>
+<mask0>Map < String , String > function ( String arg0 ) { PropertyUtils . normalizePropertyValue ( arg0 , null ) ; return userStoreManagers . get ( arg0 ) ; }</s>
+<mask0>Iterator < String > function ( String arg0 ) { return null ; }</s>
+<mask0>Iterator < T > function ( String arg0 , Class < T > arg1 , String arg2 ) { InputStream loc0 = doc . findElements ( arg0 , arg1 ) ; if ( loc0 != null ) { return Collections . unmodifiableIterator ( loc0 ) . iterator ( ) ; } else { return null ; } }</s>
+<mask0>Attribute [ ] function ( String arg0 ) { Attr [ ] loc0 = doc . getAttributes ( arg0 ) ; Attribute [ ] loc1 = new Attribute [ 1 ] ; if ( loc0 != null ) { for ( int loc2 = 0 ; loc2 < loc0 . length ; ++ loc2 ) loc1 [ loc2 ] = new Attribute ( loc0 [ loc2 ] , arg0 ) ; return loc1 ; } return null ; }
+<mask0>boolean function ( JavaCodeSource [ ] arg0 , SourceExtensionInfo arg1 ) { return runToGoal ( arg0 , Goal . VALID , arg1 ) ; }</s>
+<mask0>boolean function ( Collection < JavaFileObject > arg0 , Goal arg1 , Collection < Runnable > arg2 , Collection < Runnable > arg3 ) { boolean loc0 = false ; for ( Runnable loc1 : arg3 ) { loc0 |= validateFiles ( arg0 , loc1 , arg1 , arg2 ) ; } return loc0 ; }
+<mask0>boolean function ( JavaSource [ ] arg0 , Goal arg1 ) { return runToGoal ( arg0 , arg1 , false , true ) ; }</s>
+<mask0>void function ( boolean arg0 ) { if ( arg0 ) { GPS . start ( context , 1 ) ; } else { GPS . stop ( context ) ; } }</s>
+<mask0>void function ( boolean arg0 ) { if ( Build . VERSION . SDK_INT < 15 ) return ; if ( arg0 ) { GPS . set ( context , true ) ; } else { GPS . set ( context , false ) ; } }
+<mask0>void function ( final boolean arg0 ) { GNSSession loc0 = context . getNSSession ( R . id . g_ns_delegate ) ; loc0 . setGPS ( false , arg0 ) ; }</s>
+<mask0>boolean function ( View arg0 ) { return ( arg0 instanceof ViewGroup ) && ( ( ViewGroup ) arg0 ) . getChildCount ( ) > 0 ; }</s>
+<mask0>boolean function ( View arg0 ) { switch ( arg0 . getLayoutDirection ( ) ) { case LayoutDirection . RIGHT_TO_LEFT : return true ; case LayoutDirection . LEFT_TO_LEFT : return false ; default : return false ; } }
+<mask0>boolean function ( View arg0 ) { return Build . VERSION . SDK_INT < 23 ; }</s>
+<mask0>Checklist function ( String arg0 ) { return ( Checklist ) lists . get ( arg0 ) ; }
+<mask0>Checklist function ( Element arg0 ) { return ( Checklist ) lists . get ( arg0 ) ; }
+<mask0>Checklist function ( String arg0 ) { return ( Checklist ) lists . get ( arg0 ) ; }
+<mask0>void function ( ) { cal . setTime ( 0 , 0 , 1 , 2 ) ; instance . setDay ( 2 ) ; assertEquals ( 3 , instance . getDay ( ) ) ; }</s>
+<mask0>void function ( ) { cal . setDate ( new Date ( 1999 ) ) ; assertNull ( instance . getDay ( ) ) ; }</s>
+<mask0>void function ( ) { Date loc0 = new Date ( 1999 ) ; cal . clear ( ) ; loc0 . setDate ( 1999 , 1 , 1 ) ; cal . setTime ( "srini_string" ) ; assertNotNull ( loc0 ) ; today = loc0 ; new Date ( ) ; assertTrue ( loc0 . equals ( today ) ) ; }
+<mask0>int function ( int arg0 ) { int loc0 = 0 ; while ( nextAvailableTile ( ) > arg0 && ( arg0 = nextAvailableTile ( ) ) <= arg0 ) loc0 ++ ; return loc0 ; }</s>
+<mask0>int function ( int arg0 ) { for ( int loc0 = 0 ; loc0 < tiles . length ; loc0 ++ ) { if ( tiles [ loc0 ] . furthestFromBase ( arg0 ) < 0 ) { return tiles [ loc0 ] ; } } return Collections . emptyList ( ) ; }
+<mask0>int function ( int arg0 ) { return TileFinder . nextAvailableTileFurthestFromBase ( tiles , arg0 ) ; }</s>
+<mask0>Matrix function ( ) { double loc0 = determinant ( ) ; boolean loc1 = false ; for ( int loc2 = 0 ; loc2 < 4 ; loc2 ++ ) { if ( loc1 ) { loc0 = 1 / loc0 ; } else { loc1 = ! loc1 ; } } for ( int loc0 = 0 ; loc0 < 4 ; loc0 ++ ) { if ( loc1 ) { loc0 *= loc0 ; } } if ( loc1 ) { loc0 *= 2 ; } return new Matrix ( new double [ 4 ] [ 0]), new double [ 3 ] [ 0 ] , new double [ 3 ] [ 1 ] ) ; }
+<mask0>Matrix function ( ) { return cofactor ( ) . multiply ( ) ; }</s>
+<mask0>Matrix function ( Matrix arg0 , boolean arg1 ) { if ( arg1 == false ) throw new IllegalArgumentException ( "srini_string" ) ; SparseDoubleMatrix loc0 = new SparseDoubleMatrix ( 16 ) ; cofactor ( arg0 , loc0 , true ) ; return new Matrix ( loc0 ) ; }</s>
+<mask0>String function ( ) { return thisExitStatus . toString ( ) ; }
+<mask0>ExitStatus function ( ) { return thisExitStatus ; }</s>
+<mask0>String function ( ) { return thisExitStatus . toString ( ) ; }
+<mask0>String function ( ) { String loc0 = uac . getHover ( ) ; return ( getAttributeValue ( loc0 , "srini_string" ) ) ; }
+<mask0>String function ( String arg0 ) { return nsh . getHoverAttribute ( arg0 ) ; }</s>
+<mask0>String function ( ) { return nsh . getAttribute ( "srini_string" , "srini_string" ) ; }</s>
+<mask0>List < AttributeStatementProvider > function ( ) { return Collections . unmodifiableList ( attributeStatementProviders ) ; }
+<mask0>List < AttributeStatementProvider > function ( ) { return Collections . unmodifiableList ( attributeStatementProviders ) ; }
+<mask0>List < AttributeStatementProvider > function ( ) { return attributeStatementProviders ; }</s>
+<mask0>void function ( ) { unloadSounds ( ) ; }</s>
+<mask0>void function ( String arg0 ) { unloadSounds ( AudioManager . getAudioForString ( arg0 ) ) ; }
+<mask0>void function ( ) { unloadSounds ( assets . get ( 0 ) ) ; }</s>
+<mask0>ProjectModel function ( String arg0 ) { return projectCache . get ( arg0 ) ; }</s>
+<mask0>ProjectModel function ( String arg0 ) { ProjectModel loc0 = projectCache . get ( arg0 ) ; if ( loc0 == null ) { loc0 = getProjectModel ( arg0 ) ; projectCache . put ( arg0 , loc0 ) ; } return loc0 ; }
+<mask0>ProjectModel function ( String arg0 , String arg1 ) { return projectCache . get ( arg0 ) . get ( arg1 ) ; }</s>
+<mask0>String function ( final double arg0 ) { return namedColors . get ( new RGB ( arg0 , arg0 ) ) . hexString ( ) ; }</s>
+<mask0>String function ( double arg0 ) { return Optional . ofNullable ( namedColors . get ( new RGB ( arg0 , 0 , 0 , 255 ) ) ) . orElse ( "srini_string" ) ; }
+<mask0>String function ( int arg0 ) { return toHexString ( arg0 , 6 ) ; }</s>
+<mask0>String function ( ) { return "srini_string" + name + "srini_string" ; }</s>
+<mask0>String function ( ModelCamelContext arg0 ) { StringBuilder loc0 = new StringBuilder ( getClass ( ) . getName ( ) ) . append ( "srini_string" ) . append ( arg0 . getType ( ) ) . append ( "srini_string" ) ; loc0 . append ( "srini_string" ) ; loc0 . append ( arg0 . getPropertyName ( ) ) ; loc0 . append ( "srini_string" ) ; return loc0 . toString ( ) ; }
+<mask0>String function ( ) { return "srini_string" + name + "srini_string" + type + "srini_string" ; }</s>
+<mask0>int function ( ) { return port ; }
+<mask0>int function ( ) { return port ; }
+<mask0>int function ( ) { return port ; }
+<mask0>Set < String > function ( ) { Set < String > loc0 = new HashSet < > ( ) ; for ( String loc1 : termSet ) { loc0 . add ( loc1 ) ; } return loc0 ; }</s>
+<mask0>Set < String > function ( String arg0 ) { Set < String > loc0 = jedis . smembers ( urlSetKey ( arg0 ) ) ; return loc0 ; }</s>
+<mask0>Set < String > function ( ) { Set < String > loc0 = new HashSet < String > ( ) ; for ( String loc1 : termSet ) { if ( ! loc1 . equals ( "srini_string" ) ) loc0 . add ( loc1 ) ; } return loc0 ; }
+<mask0>void function ( ) { mBlocksToMoveIn . clear ( ) ; mBlocksToMoveOut . clear ( ) ; }
+<mask0>void function ( ) { mBlocksToMoveIn . clear ( ) ; mBlocksToMoveOut . clear ( ) ; }
+<mask0>void function ( ) { mBlocksToMoveIn . clear ( ) ; mBlocksToMoveOut . clear ( ) ; }
+<mask0>UserSubject function ( ) { return subject ; }
+<mask0>UserSubject function ( ) { return subject ; }
+<mask0>UserSubject function ( ) { return subject ; }
+<mask0>int function ( boolean arg0 ) { if ( formatRepeatCount > 0 ) return getIntFromFormat ( format , formatOff , arg0 ) ; else return 1 ; }</s>
+<mask0>int function ( boolean arg0 ) { if ( formatRepeatCount > 0 ) { return getIntFromFormat ( 0 , arg0 ) ; } else { return 1 ; } }</s>
+<mask0>int function ( boolean arg0 ) { int loc0 ; if ( formatRepeatCount > 0 ) loc0 = getIntFromFormat ( true ) ; else loc0 = 1 ; return loc0 ; }
+<mask0>String function ( ) { return errorMsg ; }
+<mask0>String function ( ) { return errorMsg ; }
+<mask0>String function ( ) { return errorMsg ; }
+<mask0>boolean function ( symbol arg0 ) { return _all . containsKey ( arg0 ) ; }</s>
+<mask0>boolean function ( final char arg0 ) { return _all . containsKey ( arg0 ) ; }</s>
+<mask0>boolean function ( String arg0 ) { not_null ( arg0 ) ; return _all . containsKey ( arg0 . toLowerCase ( ) ) ; }
+<mask0>String function ( Node arg0 , String arg1 ) { String loc0 = arg0 . getFirstChild ( ) ; if ( ( loc0 == null ) && arg0 . hasChildren ( ) ) loc0 = arg0 . getNextSibling ( ) ; if ( loc0 == null ) return arg1 ; else return merge ( loc0 . cloneTree ( ) , arg1 ) ; }
+<mask0>String function ( Node arg0 , String arg1 ) { if ( arg0 != null ) { return merge ( arg0 . getFirstChild ( ) , arg1 ) + arg0 . getNextSibling ( ) . getNextSibling ( ) . getNextSibling ( ) . getValue ( ) ; } return arg1 ; }</s>
+<mask0>String function ( Node arg0 ) { StringBuffer loc0 = new StringBuffer ( ) ; for ( Node loc1 : arg0 . getChildren ( ) ) { if ( loc1 . hasChildNodes ( ) ) { mergeAppendChild ( loc1 , loc0 ) ; } } return loc0 . toString ( ) ; }</s>
+<mask0>MarshalRegistry function ( ) { MarshalRegistry loc0 = ( marshalRegistry ) instances . get ( nextId ) ; if ( loc0 == null ) { loc0 = new MarshalRegistry ( ) ; instances . put ( nextId , loc0 ) ; nextId ++ ; } return loc0 ; }</s>
+<mask0>MarshalRegistry function ( ) { synchronized ( marshallRegistry ) { if ( notMarshalled . containsKey ( null ) ) { marshalRegistry = getMarshalRegistry ( "srini_string" ) ; } else { marshalRegistry . put ( null , notMarshalled . get ( null ) ) ; } return marshalRegistry ; } }
+<mask0>MarshalRegistry function ( ) { if ( this . notMarshalled == null ) { this . notMarshalled = new marshalRegistry ( ) ; } return this . notMarshalled ; }</s>
+<mask0>List < Pair < T , T >> function ( Class < T > arg0 , T arg1 , T arg2 ) { List < Pair < T , T >> loc0 = new ArrayList < Pair < T , T >> ( ) ; loc0 . add ( new Pair < T , T > ( arg0 , arg1 ) ) ; loc0 . add ( new Pair < T , T > ( arg2 ) ) ; return loc0 ; }
+<mask0>List < Pair < T , T >> function ( Collection < ? extends Pair > arg0 ) { List < Pair > loc0 = new ArrayList < Pair < T , T >> ( ) ; for ( Pair < T , T > loc1 : arg0 ) { loc0 . add ( loc1 ) ; } return loc0 ; }</s>
+<mask0>List < Pair < T , T >> function ( @ Nullable List < Pair < T , T >> arg0 , @ Nullable Pair < T , T > arg1 ) { List < Pair < T , T >> loc0 = new ArrayList < Pair < T , T >> ( ) ; loc0 . add ( arg0 ) ; return loc0 ; }</s>
+<mask0>void function ( ParametersMetaData arg0 ) { this . parametersMetaData = arg0 ; }
+<mask0>void function ( ParametersMetaData arg0 ) { this . parametersMetaData = arg0 ; }
+<mask0>void function ( ParametersMetaData arg0 ) { this . parametersMetaData = arg0 ; }
+<mask0>Tab [ ] function ( ) { return new Tab [ 0 ] ; }</s>
+<mask0>String function ( ) { return "srini_string" + "srini_string" ; }</s>
+<mask0>String [ ] function ( ) { return new String [ ] { "srini_string" , "srini_string" , "srini_string" } ; }
+<mask0>void function ( char [ ] arg0 ) { writer . writeCData ( arg0 ) ; }</s>
+<mask0>void function ( char [ ] arg0 , int arg1 , int arg2 ) { writer . writeCData ( new String ( arg0 , arg1 , arg2 ) ) ; }
+<mask0>void function ( byte [ ] arg0 ) { writer . write ( arg0 , 0 , arg0 . length ) ; }</s>
+<mask0>String function ( ) { return isActive ; }
+<mask0>String function ( ) { return isActive ; }
+<mask0>String function ( ) { return isActive ; }
+<mask0>DataServer function ( InetAddress arg0 , int arg1 , UserGroupInformation arg2 , boolean arg3 ) { return new UdpDataService ( arg0 , arg1 , arg2 , arg3 ) ; }</s>
+<mask0>DataServer function ( Map arg0 ) { if ( arg0 == null ) { return new DataServer ( ) ; } return new DataServer ( arg0 ) ; }</s>
+<mask0>DatagramSocket function ( String arg0 ) { if ( default SocketFactory . getSocketFactory ( ) . getSocket ( arg0 . toLowerCase ( ) ) == null ) throw new IOException ( "srini_string" ) ; return new Socket ( default SocketFactory . getSocket ( arg0 . toLowerCase ( ) ) , getPort ( arg0 ) ) ; }
+<mask0>ECKey function ( ) { return keys . get ( 0 ) ; }</s>
+<mask0>ECKey function ( ) { return keys . get ( 0 ) . getPrivateKey ( ) ; }
+<mask0>ECKey function ( ) { return keys . get ( 0 ) ; }</s>
+<mask0>void function ( ) { instrumentation . destroy ( ) ; }
+<mask0>void function ( ) { instrumentation . destroy ( ) ; }
+<mask0>void function ( ) { instrumentation . destroy ( ) ; }
+<mask0>void function ( long arg0 ) { this . maximumKeySize = arg0 ; }
+<mask0>void function ( long arg0 ) { this . maximumKeySize = arg0 ; }
+<mask0>void function ( long arg0 ) { this . maximumKeySize = arg0 ; }
+<mask0>Constant function ( String arg0 ) { if ( ts == null ) return null ; long loc0 = ts . getVal ( arg0 ) ; return new Constant ( loc0 ) ; }
+<mask0>double function ( String arg0 ) { double loc0 = 0 ; if ( ts != null ) { loc0 = ts . evalDouble ( arg0 ) ; } return loc0 ; }
+<mask0>Constant function ( String arg0 ) { Field loc0 = ts . getField ( arg0 ) ; return loc0 == null ? null : loc0 . get ( s ) ; }</s>
+<mask0>int function ( ) { return bip32HeaderPub ; }
+<mask0>int function ( ) { return bip32HeaderPub ; }
+<mask0>int function ( ) { return bip32HeaderPub ; }

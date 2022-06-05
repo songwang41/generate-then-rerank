@@ -381,8 +381,8 @@ class compute_dialog:
                     bleu_score_2 = 0
                 else:
                     bleu_score_1, bleu_score_2 = self.bleu([ps_bleu[j]], [targets_bleu[i]])
-                # _,_, d1, d2 = self.distinct([ps_bleu[j]])
-                scores.append((j + i * num_cand, bleu_score_1 / 0.5 + bleu_score_2 / 0.4, p))
+                _,_, d1, d2 = self.distinct([ps_bleu[j]])
+                scores.append((j + i * num_cand, bleu_score_1 / 0.5 + bleu_score_2 / 0.4 + d1/2 + d2/2, p))
 
             scores = sorted(scores, key = lambda x: x[1], reverse=True)
             
